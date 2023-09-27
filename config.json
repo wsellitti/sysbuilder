@@ -1,0 +1,37 @@
+{
+    "storage": {
+        "disk": {
+            "path": "disk.img",
+            "size": "32G",
+            "ptable": "gpt"
+        },
+        "layout": [
+            {
+                "start": "",
+                "end": "+100M",
+                "part_type": "ef00",
+                "fs_type": "vfat",
+                "fs_label": "EFI",
+                "fs_args": [
+                    "-F",
+                    "32"
+                ],
+                "fs_label_flag": "-n"
+            },
+            {
+                "start": "",
+                "end": "+4G",
+                "part_type": "8200",
+                "fs_type": "swap",
+                "fs_label": "swap"
+            },
+            {
+                "start": "",
+                "end": "",
+                "part_type": "8300",
+                "fs_type": "ext4",
+                "fs_label": "root"
+            }
+        ]
+    }
+}
