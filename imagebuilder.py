@@ -93,12 +93,8 @@ class Storage:
 
         self._cfg = storage
 
-        try:
-            self._device = storage_device(self._cfg["disk"])
-            log.info('Found device file: %s', device_path)
-        except Exception as dev_err:
-            log.exception(dev_err)
-            raise
+        self._device = self._storage_device(self._cfg["disk"])
+        log.info('Found device file: %s', self._device)
 
         self._partitions = []
 
