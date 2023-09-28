@@ -147,10 +147,10 @@ class Storage:
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
+                log.debug("Found %s already activated.", img_file)
                 return loopdev["name"]
 
         # Activate device.
-        log.debug("Activating %s", img_file)
         subprocess.run(["losetup", "-f", img_file], check=True)
 
         # Recheck for device and return it now.
@@ -160,6 +160,7 @@ class Storage:
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
+                log.debug("Activated %s", img_file)
                 return loopdev["name"]
 
         # Something is wrong
