@@ -119,6 +119,7 @@ class Storage:
         active loop device.
         """
 
+        log.debug("Checking for loop devices for %s.", img_file)
         # Check if device is already activated and return that.
         losetup = subprocess.run(
             ["losetup", "--list", "--json"], capture_output=True, check=True
@@ -126,8 +127,8 @@ class Storage:
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
-                log.debug("Found %s already activated.", img_file)
                 return loopdev["name"]
+        log.debug("%s does not have an active loop device.", img_file)
 
         # Activate device.
         subprocess.run(["losetup", "-f", img_file], check=True)
@@ -139,7 +140,6 @@ class Storage:
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
-                log.debug("Activated %s", img_file)
                 return loopdev["name"]
 
         # Something is wrong
