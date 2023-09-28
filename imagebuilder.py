@@ -216,13 +216,16 @@ class Storage:
         Probes a device for partitions. Returns a tuple of matching partitions.
         """
 
+        log.debug("Probing %s for partitions", devpath)
+
         subprocess.run(["partprobe", devpath], check=True)
 
         lsblk = subprocess.run(
             ["lsblk", "--json", devpath], capture_output=True, check=True
         )
         blockdevs = json.loads(lsblk.stdout)["blockdevices"][0].get("children")
-        if blockdevs == None:
+        if blockdevs is None:
+            log.debug("No partitions found on %s", devpath)
             return []
 
         parts = []
@@ -230,8 +233,10 @@ class Storage:
         for block in blockdevs:
             part = os.path.join("/dev", block["name"])
             if not os.path.exists(part):
-                raise FileNotFoundError(part)
+                raise MissingBlockDevException(part)
             parts.append(part)
+
+        log.debug("Found partitions %s on %s", parts, devpath)
 
         return parts
 
