@@ -146,7 +146,7 @@ class Storage:
         )
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
-            if loopdev["back-file"] == dev_image_fp:
+            if loopdev["back-file"] == img_file:
                 return loopdev["name"]
 
         # Activate device.
@@ -158,7 +158,7 @@ class Storage:
         )
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
-            if loopdev["back-file"] == dev_image_fp:
+            if loopdev["back-file"] == img_file:
                 return loopdev["name"]
 
         # Something is wrong
