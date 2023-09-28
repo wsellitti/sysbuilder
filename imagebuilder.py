@@ -213,10 +213,8 @@ class Storage:
     @staticmethod
     def _partprobe(devpath: str) -> list:
         """
-        Probes a device for partitions. Returns a tuple of matching partitions.
+        Returns partitions on a device.
         """
-
-        log.debug("Probing %s for partitions", devpath)
 
         subprocess.run(["partprobe", devpath], check=True)
 
@@ -234,8 +232,6 @@ class Storage:
             if not os.path.exists(part):
                 raise MissingBlockDevException(part)
             parts.append(part)
-
-        log.debug("Found partitions %s on %s", parts, devpath)
 
         return parts
 
