@@ -225,7 +225,6 @@ class Storage:
         )
         blockdevs = json.loads(lsblk.stdout)["blockdevices"][0].get("children")
         if blockdevs is None:
-            log.debug("No partitions found on %s", devpath)
             return []
 
         parts = []
