@@ -15,6 +15,26 @@ def read_config_json(fp: str) -> dict:
         return json.load(f)
 
 
+class _ImageBuilderException(Exception):
+    """Generic imagebuilder exception."""
+
+
+class FoundDevException(_ImageBuilderException):
+    """Unexpected device file found."""
+
+
+class FoundBlockDevException(FoundDevException):
+    """Unexpected block device file found."""
+
+
+class MissingDevException(_ImageBuilderException):
+    """Expected device file missing."""
+
+
+class MissingBlockDevException(MissingDevException):
+    """Expected block device missing."""
+
+
 class Storage:
     """
     A storage object representing a storage device, real or image file.
