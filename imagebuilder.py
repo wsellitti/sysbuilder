@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Install Operating Systems on VM images."""
+
 import json
 import logging
 import os
