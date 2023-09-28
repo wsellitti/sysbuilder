@@ -243,30 +243,30 @@ class Storage:
     @staticmethod
     def _storage_device(disk: dict) -> str:
         """
-        Return the path to writable storage device.
+        Return the path to a writable storage device.
 
         Params
         ======
         - disk (dict): A dictionary describing a disk or disk image file.
         """
 
-        dev = disk.get("path", "disk.img")
+        devpath = os.path.abspath(disk.get("path", "disk.img"))
 
         # The provided disk is in /dev, which means its a writable device.
-        if os.path.commonpath(dev, "/dev") == "/dev":
-            return dev
+        if os.path.commonpath([devpath, "/dev"]) == "/dev":
+            log.debug("%s is a device file", devpath)
+            return devpath
 
-        dev_image_fp = os.path.abspath(dev)
-
-        if os.path.exists(dev_image_fp):
-            raise FileExistsError(dev_image_fp)
+        if os.path.exists(devpath):
+            raise FileExistsError(devpath)
 
         subprocess.run(
-            ["truncate", "-s", disk["size"], dev_image_fp],
+            ["truncate", "-s", disk["size"], devpath],
             check=True
         )
+        log.debug("Created %s", devpath)
 
-        return Storage._activate_loop(dev_image_fp)
+        return Storage._activate_loop(devpath)
 
     def format(self):
         """Install partitions and filesystems."""
