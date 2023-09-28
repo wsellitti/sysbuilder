@@ -113,26 +113,6 @@ class Storage:
         return self._partitions
 
     @staticmethod
-    def _create_filesystem(
-        devpath: str,
-        fs_type: str,
-        fs_label: str = None,
-        fs_label_flag: str = "-l",
-        fs_args: list = [],
-    ):
-        """
-        Create a filesystem on a partition.
-        """
-
-        mkfs_cmd = [f"mkfs.{fs_type}"]
-        mkfs_cmd.extend(fs_args)
-
-        if fs_label is not None:
-            mkfs_cmd.extend([fs_label_flag, fs_label])
-
-        subprocess.run(mkfs_cmd, check=True)
-
-    @staticmethod
     def _activate_loop(img_file: str) -> str:
         """Activates a storage image as a loop device."""
 
@@ -161,6 +141,26 @@ class Storage:
 
         # Something is wrong
         raise MissingBlockDevException(f"Missing loopdevice for {img_file}")
+
+    @staticmethod
+    def _create_filesystem(
+        devpath: str,
+        fs_type: str,
+        fs_label: str = None,
+        fs_label_flag: str = "-l",
+        fs_args: list = [],
+    ):
+        """
+        Create a filesystem on a partition.
+        """
+
+        mkfs_cmd = [f"mkfs.{fs_type}"]
+        mkfs_cmd.extend(fs_args)
+
+        if fs_label is not None:
+            mkfs_cmd.extend([fs_label_flag, fs_label])
+
+        subprocess.run(mkfs_cmd, check=True)
 
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
