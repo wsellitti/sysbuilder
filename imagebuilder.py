@@ -271,7 +271,7 @@ class Storage:
 
 
 def main():
-
+    """Main."""
     cfg = read_config_json("config.json")
 
 if __name__ == "__main__":
