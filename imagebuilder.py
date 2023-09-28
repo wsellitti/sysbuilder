@@ -253,9 +253,10 @@ class Storage:
         devpath = os.path.abspath(disk.get("path", "disk.img"))
 
         # The provided disk is in /dev, which means its a writable device.
+        log.debug("Check if %s is a device file.", devpath)
         if os.path.commonpath([devpath, "/dev"]) == "/dev":
-            log.debug("%s is a device file", devpath)
             return devpath
+        log.debug("%s is not a device file.", devpath)
 
         if os.path.exists(devpath):
             raise FileExistsError(devpath)
@@ -264,7 +265,6 @@ class Storage:
             ["truncate", "-s", disk["size"], devpath],
             check=True
         )
-        log.debug("Created %s", devpath)
 
         return Storage._activate_loop(devpath)
 
