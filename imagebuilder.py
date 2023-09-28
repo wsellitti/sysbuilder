@@ -150,6 +150,7 @@ class Storage:
                 return loopdev["name"]
 
         # Activate device.
+        log.debug("Activating %s", img_file)
         subprocess.run(["losetup", "-f", img_file], check=True)
 
         # Recheck for device and return it now.
@@ -162,6 +163,7 @@ class Storage:
                 return loopdev["name"]
 
         # Something is wrong
+        raise MissingBlockDevException(f"Missing loopdevice for {img_file}")
 
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
