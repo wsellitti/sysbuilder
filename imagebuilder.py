@@ -28,6 +28,10 @@ class FoundBlockDevException(FoundDevException):
     """Unexpected block device file found."""
 
 
+class FoundPartitionException(_ImageBuilderException):
+    """Unexpected partitions found on disk."""
+
+
 class MissingDevException(_ImageBuilderException):
     """Expected device file missing."""
 
@@ -173,7 +177,8 @@ class Storage:
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
         """
-        Partition a disk according to what's defined in the layout.
+        Partition a disk according to what's defined in the layout. Raises
+        FoundPartitionException if the disk already has partitions.
 
         Params
         ======
@@ -189,7 +194,9 @@ class Storage:
 
         partitions = Storage._partprobe(devpath)
         if partitions:
-            raise FoundBlockDevException(f"{devpath} already has partitions! {partitions}")
+            raise FoundPartitionException(
+                f"{devpath} already has partitions! {partitions}"
+            )
 
         partition_cmd = ["sgdisk"]
         for partition, count in enumerate(layout):
@@ -272,8 +279,11 @@ class Storage:
         return Storage._activate_loop(devpath)
 
     def format(self):
-        """Install partitions and files`ystems."""
+        """
+        Install partitions and filesystems on empty disks.
+        """
 
+        self._partitions = self._partition(self._device, self._cfg["layout"])
 
 def main():
     """Main."""
