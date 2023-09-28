@@ -162,8 +162,54 @@ class Storage:
                 return loopdev["name"]
 
         # Something is wrong
-        raise MissingBlockDevException(f"Missing loopdevice for {dev_image_fp}")
 
+    @staticmethod
+    def _partition(devpath: str, layout: list) -> list:
+        """
+        Partition a disk according to the layout.
+
+        Params
+        ======
+        - layout (list): A list of dictionaries, each representing a partition
+          on the disk or disk image.
+
+        Returns
+        =======
+        (list) The disks partitions.
+        """
+
+        offset = 1 # partition tables start at one but lists start at 0
+
+        partitions = Storage._partprobe(devpath)
+        if len(partitions):
+            raise FoundBlockDevException(f"{devpath} already has partitions! {partitions}")
+
+        partition_cmd = ["sgdisk"]
+        for partition, count in enumerate(layout):
+            partition.extend([
+                "-n",
+                ":".join([
+                    str(count + offset),
+                    partition["start"],
+                    partition["end"]
+                ]),
+                "-t",
+                ":".join([
+                    str(count + offset),
+                    partition["part_type"]
+                ])
+            ])
+        partition_cmd.append(self._device)
+
+        log.debug("Running %s", partition_cmd)
+        subprocess.run(partition_cmd, check=True)
+
+        partitions = self._partprobe(self._device)
+        if len(partitions) != len(layout):
+            raise MissingBlockDevException(f"Cannot find all partitions for {devpath}!")
+
+        log.info("Created %s on %s", partitions, devpath)
+        return partitions
 
     @staticmethod
     def _partprobe(devpath: str) -> list:
@@ -218,46 +264,9 @@ class Storage:
 
         return Storage._activate_loop(dev_image_fp)
 
-    def partition(self, layout: list) -> None:
-        """
-        Partition a disk according to the layout.
+    def format(self):
+        """Install partitions and filesystems."""
 
-        Params
-        ======
-        - layout (list): A list of dictionaries, each representing a partition
-          on the disk or disk image.
-        """
-
-        offset = 1 # partition tables start at one but lists start at 0
-
-        partitions = self._partprobe(self._device)
-        if len(partitions):
-            self._partitions = partitions
-            return
-
-        partition_cmd = ["sgdisk"]
-        for partition, count in enumerate(layout):
-            partition.extend([
-                "-n",
-                ":".join([
-                    str(count + offset),
-                    partition["start"],
-                    partition["end"]
-                ]),
-                "-t",
-                ":".join([
-                    str(count + offset),
-                    partition["part_type"]
-                ])
-            ])
-        partition_cmd.append(self._device)
-
-        subprocess.run(partition_cmd, check=True)
-
-        partitions = self._partprobe(self._device)
-        if partitions is not None:
-            self._partitions = partitions
-            return
 
 def main():
 
