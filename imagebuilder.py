@@ -165,7 +165,7 @@ class Storage:
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
         """
-        Partition a disk according to the layout.
+        Partition a disk according to what's defined in the layout.
 
         Params
         ======
@@ -180,7 +180,7 @@ class Storage:
         offset = 1 # partition tables start at one but lists start at 0
 
         partitions = Storage._partprobe(devpath)
-        if len(partitions):
+        if partitions:
             raise FoundBlockDevException(f"{devpath} already has partitions! {partitions}")
 
         partition_cmd = ["sgdisk"]
@@ -207,7 +207,6 @@ class Storage:
         if len(partitions) != len(layout):
             raise MissingBlockDevException(f"Cannot find all partitions for {devpath}!")
 
-        log.info("Created %s on %s", partitions, devpath)
         return partitions
 
     @staticmethod
