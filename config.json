@@ -33,5 +33,23 @@
                 "fs_label": "root"
             }
         ]
-    }
+    },
+    "packages": [
+        "openssh",
+        "iptables",
+        "python3",
+        "reflector",
+        "base",
+        "linux",
+        "grub",
+        "efibootmgr",
+        "cloud-init"
+    ],
+    "services": [
+        "sshd.service",
+        "reflector.service",
+        "iptables.service",
+        "cloud-init.service",
+        "cloud-init.final"
+    ]
 }
