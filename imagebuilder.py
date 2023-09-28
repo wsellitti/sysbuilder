@@ -167,6 +167,7 @@ class Storage:
             mkfs_cmd.extend([fs_label_flag, fs_label])
         mkfs_cmd.append(devpath)
 
+        log.debug("Running %s", mkfs_cmd)
         subprocess.run(mkfs_cmd, check=True)
 
     @staticmethod
@@ -271,7 +272,7 @@ class Storage:
         return Storage._activate_loop(devpath)
 
     def format(self):
-        """Install partitions and filesystems."""
+        """Install partitions and files`ystems."""
 
 
 def main():
