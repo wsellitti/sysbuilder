@@ -150,17 +150,20 @@ class Storage:
         fs_type: str,
         fs_label: str = None,
         fs_label_flag: str = "-l",
-        fs_args: list = [],
+        fs_args: list | None = None,
     ):
         """
         Create a filesystem on a partition.
         """
 
+        if fs_args is None:
+            fs_args = []
+
         mkfs_cmd = [f"mkfs.{fs_type}"]
         mkfs_cmd.extend(fs_args)
-
         if fs_label is not None:
             mkfs_cmd.extend([fs_label_flag, fs_label])
+        mkfs_cmd.append(devpath)
 
         subprocess.run(mkfs_cmd, check=True)
 
