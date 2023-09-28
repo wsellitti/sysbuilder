@@ -8,11 +8,11 @@ import subprocess
 
 log = logging.getLogger(__name__)
 
-def read_config_json(fp: str) -> dict:
+def read_config_json(cfg_fp: str) -> dict:
     """Return the json data of the file at fp."""
 
-    with open(fp, mode="r", encoding="utf-8") as f:
-        return json.load(f)
+    with open(cfg_fp, mode="r", encoding="utf-8") as cfg:
+        return json.load(cfg)
 
 
 class _ImageBuilderException(Exception):
