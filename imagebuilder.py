@@ -198,12 +198,13 @@ class Storage:
                     partition["part_type"]
                 ])
             ])
-        partition_cmd.append(self._device)
+        partition_cmd.append(devpath)
 
         log.debug("Running %s", partition_cmd)
         subprocess.run(partition_cmd, check=True)
 
-        partitions = self._partprobe(self._device)
+        log.debug("Probing %s for partitions", devpath)
+        partitions = Storage._partprobe(devpath)
         if len(partitions) != len(layout):
             raise MissingBlockDevException(f"Cannot find all partitions for {devpath}!")
 
