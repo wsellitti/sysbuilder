@@ -162,7 +162,8 @@ class Storage:
                 return loopdev["name"]
 
         # Something is wrong
-        raise FileNotFoundError(f"Missing loopdevice for {dev_image_fp}")
+        raise MissingBlockDevException(f"Missing loopdevice for {dev_image_fp}")
+
 
     @staticmethod
     def _partprobe(devpath: str) -> list:
