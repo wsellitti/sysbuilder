@@ -102,19 +102,22 @@ class Storage:
     def partitions(self):
         """ Returns the results of partprobe."""
 
-        if len(self._partitions):
+        if self._partitions:
             return self._partitions
 
         # Might as well update if we have partitions on this image.
         partitions = self._partprobe(self._device)
-        if len(partitions):
+        if partitions:
             self._partitions = partitions
 
         return self._partitions
 
     @staticmethod
     def _activate_loop(img_file: str) -> str:
-        """Activates a storage image as a loop device."""
+        """
+        Activates a storage image as a loop device, or returns the already
+        active loop device.
+        """
 
         # Check if device is already activated and return that.
         losetup = subprocess.run(
