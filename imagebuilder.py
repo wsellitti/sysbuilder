@@ -14,23 +14,19 @@ class _ImageBuilderException(Exception):
     """Generic imagebuilder exception."""
 
 
-class FoundDevException(_ImageBuilderException):
+class DeviceFoundException(_ImageBuilderException):
     """Unexpected device file found."""
 
 
-class FoundBlockDevException(FoundDevException):
+class BlockDeviceFoundException(DeviceFoundException):
     """Unexpected block device file found."""
 
 
-class FoundPartitionException(_ImageBuilderException):
-    """Unexpected partitions found on disk."""
-
-
-class MissingDevException(_ImageBuilderException):
+class DeviceNotFoundException(_ImageBuilderException):
     """Expected device file missing."""
 
 
-class MissingBlockDevException(MissingDevException):
+class BlockDeviceNotFoundException(DeviceNotFoundException):
     """Expected block device missing."""
 
 
@@ -156,7 +152,7 @@ class Storage:
                 return loopdev["name"]
 
         # Something is wrong
-        raise MissingBlockDevException(f"Missing loopdevice for {img_file}")
+        raise BlockDeviceNotFoundException(f"Missing loopdevice for {img_file}")
 
     @staticmethod
     def _create_filesystem(
@@ -208,7 +204,7 @@ class Storage:
         """
 
         if not os.path.exists(devpath):
-            raise MissingBlockDevException(devpath)
+            raise BlockDeviceNotFoundException(devpath)
 
         if not (os.path.exists(mountpoint) and os.path.isdir(mountpoint)):
             raise FileNotFoundError(mountpoint)
@@ -224,7 +220,7 @@ class Storage:
     def _partition(devpath: str, layout: list) -> list:
         """
         Partition a disk according to what's defined in the layout. Raises
-        FoundPartitionException if the disk already has partitions.
+        BlockDeviceFoundException if the disk already has partitions.
 
         Params
         ======
@@ -240,7 +236,7 @@ class Storage:
 
         partitions = Storage._partprobe(devpath)
         if partitions:
-            raise FoundPartitionException(
+            raise BlockDeviceFoundException(
                 f"{devpath} already has partitions! {partitions}"
             )
 
@@ -270,7 +266,7 @@ class Storage:
         log.debug("Probing %s for partitions", devpath)
         partitions = Storage._partprobe(devpath)
         if len(partitions) != len(layout):
-            raise MissingBlockDevException(
+            raise BlockDeviceNotFoundException(
                 f"Cannot find all partitions for {devpath}!"
             )
 
@@ -299,7 +295,7 @@ class Storage:
         for block in blockdevs:
             part = os.path.join("/dev", block["name"])
             if not os.path.exists(part):
-                raise MissingBlockDevException(part)
+                raise BlockDeviceNotFoundException(part)
             parts.append(part)
 
         return parts
