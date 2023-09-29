@@ -153,16 +153,6 @@ class Storage:
         raise MissingBlockDevException(f"Missing loopdevice for {img_file}")
 
     @staticmethod
-    def _deactivate_loop(devpath: str) -> None:
-        """Deactivates an active loop device."""
-
-        # Check if device is already activated and return that.
-        if not os.path.exists(devpath):
-            return
-
-        subprocess.run(["losetup", "-d", devpath], check=True)
-
-    @staticmethod
     def _create_filesystem(
         devpath: str,
         fs_type: str,
@@ -189,6 +179,27 @@ class Storage:
 
         log.debug("Running %s", mkfs_cmd)
         subprocess.run(mkfs_cmd, check=True)
+
+    @staticmethod
+    def _deactivate_loop(devpath: str) -> None:
+        """Deactivates an active loop device."""
+
+        # Check if device is already activated and return that.
+        if not os.path.exists(devpath):
+            return
+
+        subprocess.run(["losetup", "-d", devpath], check=True)
+
+    @staticmethod
+    def _mount(devpath: str, mountpoint: str) -> None:
+        """
+        Mount device on mountpoint, creating mountpoint if it does not exist.
+
+        Params
+        ======
+        - devpath (str): Path to device file in /dev.
+        - mountpoint (str): Mountpoint on host filesystem.
+        """
 
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
@@ -324,7 +335,8 @@ class Storage:
             )
             log.info("Created %s on %s", fs_type, part)
 
-    def mount()
+    def mount(self) -> None:
+        """Mount filesystems per configuration."""
 
 def read_config_json(cfg_fp: str) -> dict:
     """Return the json data of the file at fp."""
