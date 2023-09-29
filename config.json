@@ -16,7 +16,8 @@
                     "-F",
                     "32"
                 ],
-                "fs_label_flag": "-n"
+                "fs_label_flag": "-n",
+                "mountpoint": "/efi"
             },
             {
                 "start": "",
@@ -24,14 +25,16 @@
                 "part_type": "8200",
                 "fs_type": "swap",
                 "fs_label": "swap",
-                "fs_create_command": "mkswap"
+                "fs_create_command": "mkswap",
+                "mountpoint": "swap"
             },
             {
                 "start": "",
                 "end": "",
                 "part_type": "8300",
                 "fs_type": "ext4",
-                "fs_label": "root"
+                "fs_label": "root",
+                "mountpoint": "/"
             }
         ]
     },

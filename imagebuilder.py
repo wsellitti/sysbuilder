@@ -65,8 +65,10 @@ class Storage:
                     fs_label: str,
                     fs_args: [
                         str, str
-                    ]
-                    fs_label_flag: str
+                    ],
+                    fs_label_flag: str,
+                    fs_create_command: str,
+                    mountpoint: str
                 }
                 ...
             ]
@@ -88,6 +90,10 @@ class Storage:
           additional flag used to create a filesystem.
         - layout[{fs_label_flag}] (str): A flag for filesystems that use weird
           flags to label the filesystem.
+        - layout[{fs_create_command}] (str): What base command to use to create
+          the filesystem.
+        - layout[{mountpoint}] (str): Where the filesystem will be mounted in
+          the installed system.
         """
 
         self._cfg = storage
@@ -318,6 +324,7 @@ class Storage:
             )
             log.info("Created %s on %s", fs_type, part)
 
+    def mount()
 
 def read_config_json(cfg_fp: str) -> dict:
     """Return the json data of the file at fp."""
