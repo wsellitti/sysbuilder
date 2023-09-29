@@ -160,9 +160,10 @@ class Storage:
     def _create_filesystem(
         devpath: str,
         fs_type: str,
-        fs_label: str = None,
+        fs_label: str | None = None,
         fs_label_flag: str = "-l",
         fs_args: list | None = None,
+        fs_create_command: str | None = None
     ) -> None:
         """
         Create a filesystem on a partition.
@@ -171,7 +172,10 @@ class Storage:
         if fs_args is None:
             fs_args = []
 
-        mkfs_cmd = [f"mkfs.{fs_type}"]
+        if fs_create_command is None:
+            fs_create_command = f"mkfs.{fs_type}"
+
+        mkfs_cmd = [fs_create_command]
         mkfs_cmd.extend(fs_args)
         if fs_label is not None:
             mkfs_cmd.extend([fs_label_flag, fs_label])
@@ -303,12 +307,14 @@ class Storage:
             fs_label = filesystem_descriptor.get("fs_label")
             fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-l")
             fs_args = filesystem_descriptor.get("fs_args")
+            fs_create_command = filesystem_descriptor.get("fs_create_command")
             self._create_filesystem(
                 devpath=part,
                 fs_args=fs_args,
                 fs_label=fs_label,
                 fs_label_flag=fs_label_flag,
-                fs_type=fs_type
+                fs_type=fs_type,
+                fs_create_command=fs_create_command
             )
             log.info("Created %s on %s", fs_type, part)
 
