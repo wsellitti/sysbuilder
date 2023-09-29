@@ -207,6 +207,19 @@ class Storage:
         - mountpoint (str): Mountpoint on host filesystem.
         """
 
+        if not os.path.exists(devpath):
+            raise MissingBlockDevException(devpath)
+
+        if not (os.path.exists(mountpoint) and os.path.isdir(mountpoint)):
+            raise FileNotFoundError(mountpoint)
+
+        subprocess.run(
+            ["mount", devpath, mountpoint],
+            check=True,
+            capture_output=True,
+            encoding="utf-8",
+        )
+
     @staticmethod
     def _partition(devpath: str, layout: list) -> list:
         """
