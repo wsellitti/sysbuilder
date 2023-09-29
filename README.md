@@ -1,0 +1,1 @@
+A simple scrpt to practice my python while I automate image building for my homelab.
