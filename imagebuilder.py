@@ -161,7 +161,7 @@ class Storage:
         devpath: str,
         fs_type: str,
         fs_label: str | None = None,
-        fs_label_flag: str = "-l",
+        fs_label_flag: str = "-L",
         fs_args: list | None = None,
         fs_create_command: str | None = None
     ) -> None:
@@ -305,7 +305,7 @@ class Storage:
             filesystem_descriptor = self._cfg["layout"][count]
             fs_type = filesystem_descriptor["fs_type"]
             fs_label = filesystem_descriptor.get("fs_label")
-            fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-l")
+            fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-L")
             fs_args = filesystem_descriptor.get("fs_args")
             fs_create_command = filesystem_descriptor.get("fs_create_command")
             self._create_filesystem(
