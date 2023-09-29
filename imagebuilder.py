@@ -222,7 +222,7 @@ class Storage:
         partition_cmd.append(devpath)
 
         log.debug("Running %s", partition_cmd)
-        subprocess.run(partition_cmd, check=True)
+        subprocess.run(partition_cmd, check=True, capture_output=True)
 
         log.debug("Probing %s for partitions", devpath)
         partitions = Storage._partprobe(devpath)
