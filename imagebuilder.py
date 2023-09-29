@@ -321,7 +321,11 @@ def read_config_json(cfg_fp: str) -> dict:
 
 def main():
     """Main."""
+
     cfg = read_config_json("config.json")
+
+    vmdisk = Storage(storage=cfg["storage"])
+    vmdisk.format()
 
 if __name__ == "__main__":
     main()
