@@ -145,6 +145,16 @@ class Storage:
         raise MissingBlockDevException(f"Missing loopdevice for {img_file}")
 
     @staticmethod
+    def _deactivate_loop(devpath: str) -> None:
+        """Deactivates an active loop device."""
+
+        # Check if device is already activated and return that.
+        if not os.path.exists(devpath):
+            return
+
+        subprocess.run(["losetup", "-d", devpath], check=True)
+
+    @staticmethod
     def _create_filesystem(
         devpath: str,
         fs_type: str,
