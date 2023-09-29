@@ -92,7 +92,9 @@ class Storage:
 
         self._cfg = storage
 
-        self._device = self._storage_device(self._cfg["disk"])
+        self._device = self._storage_device(
+            img_path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
+        )
         log.info('Found device file: %s', self._device)
 
         self._partitions = []
