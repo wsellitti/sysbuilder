@@ -203,8 +203,8 @@ class Storage:
             )
 
         partition_cmd = ["sgdisk"]
-        for partition, count in enumerate(layout):
-            partition.extend([
+        for count, partition in enumerate(layout):
+            partition_cmd.extend([
                 "-n",
                 ":".join([
                     str(count + offset),
@@ -295,7 +295,7 @@ class Storage:
             "Created partitions for %s: %s", self._device, self._partitions
         )
 
-        for part, count in enumerate(self._partitions):
+        for count, part in enumerate(self._partitions):
             filesystem_descriptor = self._cfg["layout"][count]
             fs_type = filesystem_descriptor["fs_type"]
             fs_label = filesystem_descriptor.get("fs_label")
