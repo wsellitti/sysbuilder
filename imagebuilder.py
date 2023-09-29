@@ -84,7 +84,7 @@ class Storage:
         - layout[{start}] (str): Partition start.
         - layout[{end}] (str): Partition end.
         - layout[{part_type}] (str): Partition type.
-        - layout[{fs_type}] (str): Filesystem type. 
+        - layout[{fs_type}] (str): Filesystem type.
         - layout[{fs_label}] (str): Filesystem label.
         - layout[{fs_args}] (list): A list of strings, each item is an
           additional flag used to create a filesystem.
@@ -101,13 +101,13 @@ class Storage:
         self._device = self._storage_device(
             img_path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
-        log.info('Found device file: %s', self._device)
+        log.info("Found device file: %s", self._device)
 
         self._partitions = []
 
     @property
     def partitions(self):
-        """ Returns the results of partprobe."""
+        """Returns the results of partprobe."""
 
         if self._partitions:
             return self._partitions
@@ -129,7 +129,10 @@ class Storage:
         log.debug("Checking for loop devices for %s.", img_file)
         # Check if device is already activated and return that.
         losetup = subprocess.run(
-            ["losetup", "--list", "--json"], capture_output=True, check=True
+            ["losetup", "--list", "--json"],
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
         )
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
@@ -142,7 +145,10 @@ class Storage:
 
         # Recheck for device and return it now.
         losetup = subprocess.run(
-            ["losetup", "--list", "--json"], capture_output=True, check=True
+            ["losetup", "--list", "--json"],
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
         )
         loopdevices = json.loads(losetup.stdout)["loopdevices"]
         for loopdev in loopdevices:
@@ -159,7 +165,7 @@ class Storage:
         fs_label: str | None = None,
         fs_label_flag: str = "-L",
         fs_args: list | None = None,
-        fs_create_command: str | None = None
+        fs_create_command: str | None = None,
     ) -> None:
         """
         Create a filesystem on a partition.
@@ -217,7 +223,7 @@ class Storage:
         (list) The disks partitions.
         """
 
-        offset = 1 # partition tables start at one but lists start at 0
+        offset = 1  # partition tables start at one but lists start at 0
 
         partitions = Storage._partprobe(devpath)
         if partitions:
@@ -227,28 +233,33 @@ class Storage:
 
         partition_cmd = ["sgdisk"]
         for count, partition in enumerate(layout):
-            partition_cmd.extend([
-                "-n",
-                ":".join([
-                    str(count + offset),
-                    partition["start"],
-                    partition["end"]
-                ]),
-                "-t",
-                ":".join([
-                    str(count + offset),
-                    partition["part_type"]
-                ])
-            ])
+            partition_cmd.extend(
+                [
+                    "-n",
+                    ":".join(
+                        [
+                            str(count + offset),
+                            partition["start"],
+                            partition["end"],
+                        ]
+                    ),
+                    "-t",
+                    ":".join([str(count + offset), partition["part_type"]]),
+                ]
+            )
         partition_cmd.append(devpath)
 
         log.debug("Running %s", partition_cmd)
-        subprocess.run(partition_cmd, check=True, capture_output=True)
+        subprocess.run(
+            partition_cmd, check=True, capture_output=True, encoding="utf-8"
+        )
 
         log.debug("Probing %s for partitions", devpath)
         partitions = Storage._partprobe(devpath)
         if len(partitions) != len(layout):
-            raise MissingBlockDevException(f"Cannot find all partitions for {devpath}!")
+            raise MissingBlockDevException(
+                f"Cannot find all partitions for {devpath}!"
+            )
 
         return partitions
 
@@ -261,7 +272,10 @@ class Storage:
         subprocess.run(["partprobe", devpath], check=True)
 
         lsblk = subprocess.run(
-            ["lsblk", "--json", devpath], capture_output=True, check=True
+            ["lsblk", "--json", devpath],
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
         )
         blockdevs = json.loads(lsblk.stdout)["blockdevices"][0].get("children")
         if blockdevs is None:
@@ -301,10 +315,7 @@ class Storage:
         if os.path.exists(devpath):
             raise FileExistsError(devpath)
 
-        subprocess.run(
-            ["truncate", "-s", size, devpath],
-            check=True
-        )
+        subprocess.run(["truncate", "-s", size, devpath], check=True)
 
         return Storage._activate_loop(devpath)
 
@@ -331,18 +342,20 @@ class Storage:
                 fs_label=fs_label,
                 fs_label_flag=fs_label_flag,
                 fs_type=fs_type,
-                fs_create_command=fs_create_command
+                fs_create_command=fs_create_command,
             )
             log.info("Created %s on %s", fs_type, part)
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
 
+
 def read_config_json(cfg_fp: str) -> dict:
     """Return the json data of the file at fp."""
 
     with open(cfg_fp, mode="r", encoding="utf-8") as cfg:
         return json.load(cfg)
+
 
 def main():
     """Main."""
@@ -351,6 +364,7 @@ def main():
 
     vmdisk = Storage(storage=cfg["storage"])
     vmdisk.format()
+
 
 if __name__ == "__main__":
     main()
