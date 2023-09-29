@@ -9,12 +9,6 @@ import subprocess
 
 log = logging.getLogger(__name__)
 
-def read_config_json(cfg_fp: str) -> dict:
-    """Return the json data of the file at fp."""
-
-    with open(cfg_fp, mode="r", encoding="utf-8") as cfg:
-        return json.load(cfg)
-
 
 class _ImageBuilderException(Exception):
     """Generic imagebuilder exception."""
@@ -157,7 +151,7 @@ class Storage:
         fs_label: str = None,
         fs_label_flag: str = "-l",
         fs_args: list | None = None,
-    ):
+    ) -> None:
         """
         Create a filesystem on a partition.
         """
@@ -251,16 +245,19 @@ class Storage:
         return parts
 
     @staticmethod
-    def _storage_device(disk: dict) -> str:
+    def _storage_device(img_path: str = "disk.img", size: str = "32G") -> str:
         """
         Return the path to a writable storage device.
 
         Params
         ======
-        - disk (dict): A dictionary describing a disk or disk image file.
+        - img_path (str): Path to an image file or device file. Defaults to
+          "disk.img".
+        - size (str): Size of image file. Only used if img_path points to a
+          nonexistant file. Defaults to "32G"
         """
 
-        devpath = os.path.abspath(disk.get("path", "disk.img"))
+        devpath = os.path.abspath(img_path)
 
         # The provided disk is in /dev, which means its a writable device.
         log.debug("Check if %s is a device file.", devpath)
@@ -272,18 +269,43 @@ class Storage:
             raise FileExistsError(devpath)
 
         subprocess.run(
-            ["truncate", "-s", disk["size"], devpath],
+            ["truncate", "-s", size, devpath],
             check=True
         )
 
         return Storage._activate_loop(devpath)
 
-    def format(self):
+    def format(self) -> None:
         """
         Install partitions and filesystems on empty disks.
         """
 
         self._partitions = self._partition(self._device, self._cfg["layout"])
+        log.info(
+            "Created partitions for %s: %s", self._device, self._partitions
+        )
+
+        for part, count in enumerate(self._partitions):
+            filesystem_descriptor = self._cfg["layout"][count]
+            fs_type = filesystem_descriptor["fs_type"]
+            fs_label = filesystem_descriptor.get("fs_label")
+            fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-l")
+            fs_args = filesystem_descriptor.get("fs_args")
+            self._create_filesystem(
+                devpath=part,
+                fs_args=fs_args,
+                fs_label=fs_label,
+                fs_label_flag=fs_label_flag,
+                fs_type=fs_type
+            )
+            log.info("Created %s on %s", fs_type, part)
+
+
+def read_config_json(cfg_fp: str) -> dict:
+    """Return the json data of the file at fp."""
+
+    with open(cfg_fp, mode="r", encoding="utf-8") as cfg:
+        return json.load(cfg)
 
 def main():
     """Main."""
