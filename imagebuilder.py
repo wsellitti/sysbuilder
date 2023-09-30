@@ -14,11 +14,11 @@ class _ImageBuilderException(Exception):
     """Generic imagebuilder exception."""
 
 
-class DeviceFoundException(_ImageBuilderException):
+class DeviceExistsException(_ImageBuilderException):
     """Unexpected device file found."""
 
 
-class BlockDeviceFoundException(DeviceFoundException):
+class BlockDeviceExistsException(DeviceExistsException):
     """Unexpected block device file found."""
 
 
@@ -167,6 +167,9 @@ class Storage:
         Create a filesystem on a partition.
         """
 
+        if not os.path.exists(devpath):
+            raise BlockDeviceNotFoundException
+
         if fs_args is None:
             fs_args = []
 
@@ -220,7 +223,7 @@ class Storage:
     def _partition(devpath: str, layout: list) -> list:
         """
         Partition a disk according to what's defined in the layout. Raises
-        BlockDeviceFoundException if the disk already has partitions.
+        BlockDeviceExistsException if the disk already has partitions.
 
         Params
         ======
@@ -236,7 +239,7 @@ class Storage:
 
         partitions = Storage._partprobe(devpath)
         if partitions:
-            raise BlockDeviceFoundException(
+            raise BlockDeviceExistsException(
                 f"{devpath} already has partitions! {partitions}"
             )
 
