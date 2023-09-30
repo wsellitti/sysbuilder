@@ -14,4 +14,4 @@ class Config:
 
     def get(self, key: Any) -> dict:
         """Get's a configuration value."""
-        return self._cfg.get(key)
+        return self._cfg[key]
