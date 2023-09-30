@@ -1,7 +1,7 @@
 """Install Operating Systems on VM images."""
 
 import logging
-from sysbuilder._helper import read_config
+from sysbuilder.config import Config
 from sysbuilder.storage import Storage
 
 log = logging.getLogger(__name__)
@@ -10,9 +10,9 @@ log = logging.getLogger(__name__)
 def main():
     """Main."""
 
-    cfg = read_config("config.json")
+    cfg = Config("config.json")
 
-    vdi = Storage(storage=cfg["storage"])
+    vdi = Storage(storage=cfg.get("Storage"))
     vdi.format()
 
 
