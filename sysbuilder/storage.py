@@ -1,34 +1,16 @@
-#!/usr/bin/env python3
-
-"""Install Operating Systems on VM images."""
+"""Manage storage devices."""
 
 import json
 import logging
 import os
 import subprocess
 from typing import List, Dict, Any
+from sysbuilder._exceptions import (
+    BlockDeviceExistsException,
+    BlockDeviceNotFoundException,
+)
 
 log = logging.getLogger(__name__)
-
-
-class _ImageBuilderException(Exception):
-    """Generic imagebuilder exception."""
-
-
-class DeviceExistsException(_ImageBuilderException):
-    """Unexpected device file found."""
-
-
-class BlockDeviceExistsException(DeviceExistsException):
-    """Unexpected block device file found."""
-
-
-class DeviceNotFoundException(_ImageBuilderException):
-    """Expected device file missing."""
-
-
-class BlockDeviceNotFoundException(DeviceNotFoundException):
-    """Expected block device missing."""
 
 
 class _BlockDevice:
@@ -407,23 +389,3 @@ class Storage:
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
-
-
-def read_config_json(cfg_fp: str) -> dict:
-    """Return the json data of the file at fp."""
-
-    with open(cfg_fp, mode="r", encoding="utf-8") as cfg:
-        return json.load(cfg)
-
-
-def main():
-    """Main."""
-
-    cfg = read_config_json("config.json")
-
-    vmdisk = Storage(storage=cfg["storage"])
-    vmdisk.format()
-
-
-if __name__ == "__main__":
-    main()
