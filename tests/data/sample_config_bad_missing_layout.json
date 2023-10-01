@@ -1,0 +1,38 @@
+{
+    "storage": {
+        "disk": {
+            "path": "/tmp/disk.img",
+            "type": "sparse",
+            "size": "32G",
+            "ptable": "gpt"
+        }
+    },
+    "install": {
+        "base": "archlinux",
+        "package_manager": "pacman",
+        "packages": [
+            "openssh",
+            "iptables",
+            "python3",
+            "base",
+            "linux",
+            "grub",
+            "efibootmgr"
+        ],
+        "services": {
+            "enabled": [
+                "sshd.service",
+                "iptables.service"
+            ]
+        },
+        "files": [
+            {
+                "src": "filepath",
+                "dest": "filepath",
+                "mode": "644",
+                "owner": "root",
+                "group": "root"
+            }
+        ]
+    }
+}

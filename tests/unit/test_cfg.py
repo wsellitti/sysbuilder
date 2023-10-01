@@ -2,7 +2,9 @@
 
 """Test configuration importer."""
 
+import glob
 import json
+import os
 from jsonschema.exceptions import ValidationError
 import unittest
 
@@ -19,10 +21,10 @@ def get_cfg():
         return json.load(f)
 
 
-class GoodCfgTest(unittest.TestCase):
+class CfgTest(unittest.TestCase):
     """Test importing a good configuration."""
 
-    def test_init(self):
+    def test_cfg_good(self):
         """Test validation."""
 
         _cfg = get_cfg()
@@ -32,20 +34,14 @@ class GoodCfgTest(unittest.TestCase):
 
         self.assertEqual(cfg._cfg, _cfg)
 
+    def test_cfg_bad(self):
+        """Test all bad configs."""
 
-class BadCfgTest(unittest.TestCase):
-    """Test importing bad configurations."""
+        bad_examples = glob.glob(
+            os.path.join("tests", "data", "sample_config_bad_*.json")
+        )
 
-    def _test_bad(self, sub: str):
-        """Bad tests are all the same structure."""
-
-        _cfg = get_cfg()
-
-        cfg_path = f"tests/data/sample_config_{sub}.json"
-        with self.assertRaises(ValidationError):
-            Config(cfg_path)
-
-    def test_init_missing_disk(self):
-        """Test validation when ['storage']['disk'] is missing."""
-
-        self._test_bad("missing_disk")
+        for example in bad_examples:
+            with self.subTest(_cfg=get_cfg(), example=example):
+                with self.assertRaises(ValidationError):
+                    Config(example)
