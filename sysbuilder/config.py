@@ -1,11 +1,10 @@
 """Convert the configuration file into an object."""
 
 import json
-from jsonschema import validate
 import logging
 import os
-import re
 from typing import Any, Dict
+from jsonschema import validate
 from sysbuilder._validate import validate_json
 from sysbuilder.storage import _BlockDevice
 
