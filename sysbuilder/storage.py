@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 from typing import List, Dict, Any
-from sysbuilder._exceptions import (
+from sysbuilder.exceptions import (
     BlockDeviceExistsException,
     BlockDeviceNotFoundException,
 )
@@ -286,53 +286,6 @@ class Storage:
         ======
         - storage (dict): A dictionary representing a device and it's partition
           layout.
-
-        storage (dict)
-        --------------
-        {
-            disk: {
-                path: str,
-                size: str,
-                ptable: str,
-            }
-            layout: [
-                {
-                    start: str,
-                    end: str,
-                    part_type: str,
-                    fs_type: str,
-                    fs_label: str,
-                    fs_args: [
-                        str, str
-                    ],
-                    fs_label_flag: str,
-                    fs_create_command: str,
-                    mountpoint: str
-                }
-                ...
-            ]
-        }
-
-        - disk (dict): A dictionary representing the disk or disk image to
-          capture with the storage object.
-        - disk{path} (str): Path to the disk
-        - disk{size} (str): Size of the disk image
-        - disk{ptable} (str): Partition table type.
-        - layout (list): A list of dictionaries, each representing a partition
-          on the disk or disk image.
-        - layout[{start}] (str): Partition start.
-        - layout[{end}] (str): Partition end.
-        - layout[{part_type}] (str): Partition type.
-        - layout[{fs_type}] (str): Filesystem type.
-        - layout[{fs_label}] (str): Filesystem label.
-        - layout[{fs_args}] (list): A list of strings, each item is an
-          additional flag used to create a filesystem.
-        - layout[{fs_label_flag}] (str): A flag for filesystems that use weird
-          flags to label the filesystem.
-        - layout[{fs_create_command}] (str): What base command to use to create
-          the filesystem.
-        - layout[{mountpoint}] (str): Where the filesystem will be mounted in
-          the installed system.
         """
 
         self._cfg = storage
