@@ -65,7 +65,7 @@ class Config:
     - layout (list): Describes the partition layout on the storage device, as
       well as filesystems on those partitions. Each item in `layout` must
       contain at least the following keys: ['start', 'end', 'typecode',
-      'filesystem'].append
+      'filesystem'].
 
         - start (str): Sector where the partition should start. Values can be
           absolute or positions measured in standard notation: "K", "M", "G",
