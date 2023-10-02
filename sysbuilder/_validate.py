@@ -41,7 +41,7 @@ validate_json = {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 128,
-                    "contains": {
+                    "items": {
                         "type": "object",
                         "properties": {
                             "start": {
@@ -72,6 +72,9 @@ validate_json = {
                                     },
                                     "args": {
                                         "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                        },
                                     },
                                 },
                             },

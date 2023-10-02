@@ -1,0 +1,78 @@
+{
+    "storage": {
+        "disk": {
+            "path": "/tmp/disk.img",
+            "type": "sparse",
+            "size": "32G",
+            "ptable": "gpt"
+        },
+        "layout": [
+            {
+                "start": "",
+                "end": "+100M",
+                "typecode": "ef00",
+                "filesystem": {
+                    "type": "vfat",
+                    "label": "EFI",
+                    "args": [
+                        "-F",
+                        "32"
+                    ],
+                    "label_flag": "-n",
+                    "mountpoint": "/efi"
+                }
+            },
+            {
+                "start": "",
+                "end": "+4G",
+                "typecode": "8200",
+                "filesystem": {
+                    "type": "swap",
+                    "label": "swap",
+                    "mountpoint": "swap"
+                }
+            },
+            {
+                "start": "",
+                "end": "",
+                "typecode": "8300",
+                "filesystem": {
+                    "type": "ext4",
+                    "label": "root",
+                    "mountpoint": "/"
+                }
+            },
+            {
+                "blue": "green"
+            }
+        ]
+    },
+    "install": {
+        "base": "archlinux",
+        "package_manager": "pacman",
+        "packages": [
+            "openssh",
+            "iptables",
+            "python3",
+            "base",
+            "linux",
+            "grub",
+            "efibootmgr"
+        ],
+        "services": {
+            "enabled": [
+                "sshd.service",
+                "iptables.service"
+            ]
+        },
+        "files": [
+            {
+                "src": "filepath",
+                "dest": "filepath",
+                "mode": "644",
+                "owner": "root",
+                "group": "root"
+            }
+        ]
+    }
+}
