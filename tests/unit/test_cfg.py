@@ -1,45 +1,14 @@
 """Test configuration importer."""
 
-import glob
 import json
-import os
-import re
 import unittest
 from jsonschema.exceptions import ValidationError
 
 from sysbuilder.config import Config
 
 
-class CfgTest(unittest.TestCase):
+class GoodCfgTest(unittest.TestCase):
     """Test importing a good configuration."""
-
-    def __init__(self, *args, **kwargs):
-        """Wrap init to add a bunch of generated tests."""
-
-        bad_examples = glob.glob(
-            os.path.join("tests", "data", "sample_config_bad_*.json")
-        )
-
-        for bad_example in bad_examples:
-            example_name = re.search(
-                "sample_config_bad_(.+).json", bad_example
-            ).group(1)
-            test = self._template(bad_example)
-            test.__name__ = f"test_cfg_bad_{example_name}"
-
-            # Add tests to test somehow
-            self.__setattr__(test.__name__, test)
-
-        super().__init__(*args, **kwargs)
-
-    def _template(self, json_path: str):
-        """Return template test function."""
-
-        def inner():
-            with self.assertRaises((ValidationError, KeyError)):
-                Config(json_path)
-
-        return inner
 
     def setUp(self):
         """Helper."""
@@ -56,14 +25,29 @@ class CfgTest(unittest.TestCase):
 
         self.assertEqual(cfg._cfg, self.cfg)  # pylint: disable=W0212
 
+
+class BadCfgTest(unittest.TestCase):
+    """Test importing a good configuration."""
+
+    def _template(self, test_name):
+        """Template function."""
+
+        json_path = f"tests/data/sample_config_bad_{test_name}.json"
+        with self.assertRaises((ValidationError, KeyError)):
+            Config(json_path)
+
     def test_cfg_bad_layout_items(self):
-        """Test bad layout."""
+        """layout_items"""
+        self._template("layout_items")
 
-        with open(
-            "tests/data/sample_config_bad_layout_items.json",
-            encoding="utf-8",
-            mode="r",
-        ) as f:  # pylint: disable=C0103
-            cfg = json.load(f)
+    def test_cfg_bad_missing_disk(self):
+        """missing_disk"""
+        self._template("missing_disk")
 
-            Config("tests/data/sample_config_bad_layout_items.json")
+    def test_cfg_bad_missing_layout(self):
+        """missing_layout"""
+        self._template("missing_layout")
+
+    def test_cfg_bad_vdisk_without_size(self):
+        """vdisk_wihout_size"""
+        self._template("vdisk_without_size")

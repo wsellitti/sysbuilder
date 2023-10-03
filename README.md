@@ -13,4 +13,5 @@ Testing
 - sample_config_good.json: A valid configuration.
 - sample_config_bad_*.json: Bad configurations, names must start with
   "sample_config_bad_" and should be brief but describe what's bad in the
-  configuration. Unittest runs subtests for all the configurations.
+  configuration. A function should be appended to BadCfgTests for all
+  configurations.
