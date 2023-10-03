@@ -167,6 +167,95 @@ class _BlockDevice:
         return parts
 
 
+class _VirtualDiskImage:
+    """Disk image file commands."""
+
+    @staticmethod
+    def activate(img_file: str) -> str:
+        """
+        Activates a storage image as a loop device, or returns the already
+        active loop device.
+        """
+
+        loopdevices = _BlockDevice.list_all()
+        for loopdev in loopdevices:
+            if loopdev["back-file"] == img_file:
+                return loopdev["name"]
+        log.info("%s does not have an active loop device.", img_file)
+
+        # Activate device.
+        log.debug("Run %s", ["losetup", "-f", img_file])
+        subprocess.run(["losetup", "-f", img_file], check=True)
+
+        # Recheck for device and return it now.
+        loopdevices = _BlockDevice.list_all()
+        for loopdev in loopdevices:
+            if loopdev["back-file"] == img_file:
+                return loopdev["name"]
+
+        # Something is wrong
+        raise BlockDeviceNotFoundException(f"Missing loopdevice for {img_file}")
+
+    @staticmethod
+    def create(img_path: str = "disk.img", size: str = "32G") -> str:
+        """
+        Create a disk image file, activate it as a loop device, and return the
+        path to the loop device.
+
+        Params
+        ======
+        - img_path (str): Path to an image file or device file. Defaults to
+          "disk.img".
+        - size (str): Size of image file. Only used if img_path points to a
+          nonexistant file. Defaults to "32G"
+
+        Returns
+        =======
+        (str) The path to the loop device.
+        """
+
+        devpath = os.path.abspath(img_path)
+
+        # The provided disk is in /dev, which means its a writable device.
+        log.debug("Check if %s is a device file.", devpath)
+        if os.path.commonpath([devpath, "/dev"]) == "/dev":
+            return devpath
+        log.debug("%s is not a device file.", devpath)
+
+        if os.path.exists(devpath):
+            raise FileExistsError(devpath)
+
+        subprocess.run(["truncate", "-s", size, devpath], check=True)
+
+        return _VirtualDiskImage.activate(devpath)
+
+    @staticmethod
+    def deactivate(devpath: str) -> None:
+        """Deactivates an active loop device."""
+
+        # Check if device is already activated and return that.
+        loopdev = _BlockDevice.list_one(devpath=devpath)
+
+        if loopdev["type"] != "loop":
+            raise ValueError(f"{devpath} is not a loop device!")
+
+        subprocess.run(["losetup", "-d", devpath], check=True)
+
+    @staticmethod
+    def find_active_devices(path: str) -> List[str]:
+        """
+        Find active _BlockDevs and _FileSystems using `path` as a backing
+        file.
+        """
+
+        loopdevs = _BlockDevice.list_all()
+        active_devices = []
+        for dev in loopdevs:
+            if (dev["type"] == "loop" and dev["back-file"] == path):
+                active_devices.append(dev["path"])
+
+        return active_devices
+
 class _FileSystem:
     """Linux part device commands."""
 
@@ -261,7 +350,7 @@ class Storage:
 
         self._cfg = storage
 
-        self._device = _BlockDevice.create(
+        self._device = _VirtualDiskImage.create(
             img_path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
         log.info("Found device file: %s", self._device)
