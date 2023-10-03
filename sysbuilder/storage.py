@@ -17,75 +17,16 @@ class _BlockDevice:
     """Linux block device commands."""
 
     @staticmethod
-    def activate_loop(img_file: str) -> str:
-        """
-        Activates a storage image as a loop device, or returns the already
-        active loop device.
-        """
+    def get_child_devices(devpath: str) -> List[Dict[Any, Any]]:
+        """Get's child devices."""
 
-        loopdevices = _BlockDevice.list_all()
-        for loopdev in loopdevices:
-            if loopdev["back-file"] == img_file:
-                return loopdev["name"]
-        log.info("%s does not have an active loop device.", img_file)
+        block_dev = _BlockDevice.list_one(devpath=devpath)
+        children = []
+        for child in block_dev.get("children", []):
+            children.append(child["path"])
+            children.extend(_BlockDevice.get_child_devices(child["path"]))
 
-        # Activate device.
-        log.debug("Run %s", ["losetup", "-f", img_file])
-        subprocess.run(["losetup", "-f", img_file], check=True)
-
-        # Recheck for device and return it now.
-        loopdevices = _BlockDevice.list_all()
-        for loopdev in loopdevices:
-            if loopdev["back-file"] == img_file:
-                return loopdev["name"]
-
-        # Something is wrong
-        raise BlockDeviceNotFoundException(f"Missing loopdevice for {img_file}")
-
-    @staticmethod
-    def create(img_path: str = "disk.img", size: str = "32G") -> str:
-        """
-        Create a disk image file, activate it as a loop device, and return the
-        path to the loop device.
-
-        Params
-        ======
-        - img_path (str): Path to an image file or device file. Defaults to
-          "disk.img".
-        - size (str): Size of image file. Only used if img_path points to a
-          nonexistant file. Defaults to "32G"
-
-        Returns
-        =======
-        (str) The path to the loop device.
-        """
-
-        devpath = os.path.abspath(img_path)
-
-        # The provided disk is in /dev, which means its a writable device.
-        log.debug("Check if %s is a device file.", devpath)
-        if os.path.commonpath([devpath, "/dev"]) == "/dev":
-            return devpath
-        log.debug("%s is not a device file.", devpath)
-
-        if os.path.exists(devpath):
-            raise FileExistsError(devpath)
-
-        subprocess.run(["truncate", "-s", size, devpath], check=True)
-
-        return _BlockDevice.activate_loop(devpath)
-
-    @staticmethod
-    def deactivate_loop(devpath: str) -> None:
-        """Deactivates an active loop device."""
-
-        # Check if device is already activated and return that.
-        loopdev = _BlockDevice.list_one(devpath=devpath)
-
-        if loopdev["type"] != "loop":
-            raise ValueError(f"{devpath} is not a loop device!")
-
-        subprocess.run(["losetup", "-d", devpath], check=True)
+        return children
 
     @staticmethod
     def list_all() -> List[Dict[Any, Any]]:
