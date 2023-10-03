@@ -36,18 +36,15 @@ class BadCfgTest(unittest.TestCase):
         with self.assertRaises((ValidationError, KeyError)):
             Config(json_path)
 
+    # pylint: disable=C0116
     def test_cfg_bad_layout_items(self):
-        """layout_items"""
         self._template("layout_items")
 
     def test_cfg_bad_missing_disk(self):
-        """missing_disk"""
         self._template("missing_disk")
 
     def test_cfg_bad_missing_layout(self):
-        """missing_layout"""
         self._template("missing_layout")
 
     def test_cfg_bad_vdisk_without_size(self):
-        """vdisk_wihout_size"""
         self._template("vdisk_without_size")
