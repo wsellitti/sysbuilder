@@ -17,14 +17,29 @@ class _BlockDevice:
     """Linux block device commands."""
 
     @staticmethod
-    def get_child_devices(devpath: str) -> List[Dict[Any, Any]]:
-        """Get's child devices."""
+    def get_child_devices(
+        devpath: str, depth: int = -1
+    ) -> List[Dict[Any, Any]]:
+        """
+        Get's child devices.
+
+        Params
+        ======
+        - devpath: Device path.
+        - depth: How many layers of children to go to. Proving a negative
+          number means go forever.
+        """
 
         block_dev = _BlockDevice.list_one(devpath=devpath)
         children = []
-        for child in block_dev.get("children", []):
-            children.append(child["path"])
-            children.extend(_BlockDevice.get_child_devices(child["path"]))
+        if depth != 0:
+            for child in block_dev.get("children", []):
+                children.append(child["path"])
+                children.extend(
+                    _BlockDevice.get_child_devices(
+                        child["path"], depth=(depth - 1)
+                    )
+                )
 
         return children
 
