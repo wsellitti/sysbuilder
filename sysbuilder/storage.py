@@ -51,7 +51,7 @@ class _BlockDevice:
                         ["/sys", "block", dev["name"], "loop", "backing_file"]
                     ),
                     mode="r",
-                    encoding="utf-8"
+                    encoding="utf-8",
                 ) as f:
                     dev["back-file"] = f.read()
 
@@ -82,7 +82,7 @@ class _BlockDevice:
                         ["/sys", "block", dev["name"], "loop", "backing_file"]
                     ),
                     mode="r",
-                    encoding="utf-8"
+                    encoding="utf-8",
                 ) as f:
                     dev["back-file"] = f.read()
 
@@ -251,10 +251,11 @@ class _VirtualDiskImage:
         loopdevs = _BlockDevice.list_all()
         active_devices = []
         for dev in loopdevs:
-            if (dev["type"] == "loop" and dev["back-file"] == path):
+            if dev["type"] == "loop" and dev["back-file"] == path:
                 active_devices.append(dev["path"])
 
         return active_devices
+
 
 class _FileSystem:
     """Linux part device commands."""
