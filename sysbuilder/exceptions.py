@@ -19,3 +19,11 @@ class DeviceNotFoundException(_SysBuilderException):
 
 class BlockDeviceNotFoundException(DeviceNotFoundException):
     """Expected block device missing."""
+
+
+class PartitionCreateError(_SysBuilderException):
+    """Unable to partition a device."""
+
+
+class ProbeError(_SysBuilderException):
+    """Device Probe failed."""

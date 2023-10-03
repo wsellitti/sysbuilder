@@ -6,8 +6,9 @@ import os
 import subprocess
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
-    BlockDeviceExistsException,
     BlockDeviceNotFoundException,
+    PartitionCreateError,
+    ProbeError,
 )
 
 log = logging.getLogger(__name__)
@@ -119,7 +120,12 @@ class _BlockDevice:
         return dev
 
     @staticmethod
-    def partition(devpath: str, layout: list) -> list:
+    def create_partition(
+        devpath: str,
+        start_sector: str = "",
+        end_sector: str = "",
+        typecode: str = "ef00",
+    ) -> None:
         """
         Partition a disk according to what's defined in the layout. Raises
         BlockDeviceExistsException if the disk already has partitions.
@@ -128,71 +134,77 @@ class _BlockDevice:
         ======
         - layout (list): A list of dictionaries, each representing a partition
           on the disk or disk image.
-
-        Returns
-        =======
-        (list) The disks partitions.
+        - start (str): Sector where the partition should start. Values can be
+          absolute or positions measured in standard notation: "K", "M", "G",
+          "T". Providing and empty string "" will use the next available
+          starting sector. Values beginning with a "+" will start the
+          parittion that distance past the next available starting sector (ie,
+          "+2G" will cause the next partition to start 2 gibibytes after the
+          last partition ended). Values beginning with a "-"  will start the
+          partition that distance from the next available ending sector with
+          enough space (ie, "-2G" will create a partition that starts 2
+          gibibytes before the ending most available sector).
+        - end (str): Sector where the partition should end. Values can be
+          absolute or positions measured in standard notation: "K", "M", "G",
+          "T". Providing and empty string "" will use the next available
+          ending sector from the starting sector. Values beginning with a "+"
+          will end the partition that distance past the starting sector (ie,
+          "+2G" will create a 2 gibibyte partition). Values beginning with a
+          "-" will end the partition that distance from the next available
+          ending sector (ie, "-2G" will create a partition that 2 gibibytes
+          short of the maximum space available for that partiton).
+        - typecode (str): A 4-digit hexadecimal value representing partition
+          type codes, as returned from `sgdisk -L`.
         """
 
-        offset = 1  # partition tables start at one but lists start at 0
+        old_partitions = _BlockDevice.partprobe(devpath)
 
-        partitions = _BlockDevice.partprobe(devpath)
-        if partitions:
-            raise BlockDeviceExistsException(
-                f"{devpath} already has partitions! {partitions}"
-            )
+        count = str(len(old_partitions))
 
-        partition_cmd = ["sgdisk"]
-        for count, partition in enumerate(layout):
-            partition_cmd.extend(
+        try:
+            subprocess.run(
                 [
+                    "sgdisk",
                     "-n",
-                    ":".join(
-                        [
-                            str(count + offset),
-                            partition["start"],
-                            partition["end"],
-                        ]
-                    ),
+                    ":".join([count, str(start_sector), str(end_sector)]),
                     "-t",
-                    ":".join([str(count + offset), partition["part_type"]]),
-                ]
+                    ":".join([count, typecode]),
+                ],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
             )
-        partition_cmd.append(devpath)
-
-        log.debug("Running %s", partition_cmd)
-        subprocess.run(
-            partition_cmd, check=True, capture_output=True, encoding="utf-8"
-        )
-
-        log.debug("Probing %s for partitions", devpath)
-        partitions = _BlockDevice.partprobe(devpath)
-        if len(partitions) != len(layout):
-            raise BlockDeviceNotFoundException(
-                f"Cannot find all partitions for {devpath}!"
-            )
-
-        return partitions
+        except subprocess.CalledProcessError as part_err:
+            raise PartitionCreateError(
+                f"Cannot create partition {count} on {devpath}!"
+            ) from part_err
 
     @staticmethod
-    def partprobe(devpath: str) -> list:
+    def get_partitions(devpath: str) -> List[str]:
         """
-        Returns partitions on a device.
+        Returns a list of partitions. Raises ValueError if `devpath` is not a
+        disk device
         """
 
-        subprocess.run(["partprobe", devpath], check=True)
+        if _BlockDevice.is_disk(devpath=devpath):
+            raise ValueError(f"{devpath} is not a disk!")
 
-        blockdevs = _BlockDevice.get_child_devices(devpath=devpath, depth=1)
+        return _BlockDevice.get_child_devices(devpath=devpath, depth=1)
 
-        parts = []
+    @staticmethod
+    def partprobe(devpath: str) -> None:
+        """
+        Raises ProbeError.
+        """
 
-        for block in blockdevs:
-            if not os.path.exists(block["path"]):
-                raise BlockDeviceNotFoundException(block["path"])
-            if _BlockDevice.is_part(block["path"]):
-                parts.append(block["path"])
-
-        return parts
+        try:
+            subprocess.run(
+                ["partprobe", devpath], check=True, capture_output=True
+            )
+        except subprocess.CalledProcessError as probe_err:
+            raise ProbeError(
+                f"Unable to probe {devpath} for partitions."
+            ) from probe_err
 
 
 class _VirtualDiskImage:
@@ -245,10 +257,8 @@ class _VirtualDiskImage:
         devpath = os.path.abspath(img_path)
 
         # The provided disk is in /dev, which means its a writable device.
-        log.debug("Check if %s is a device file.", devpath)
         if os.path.commonpath([devpath, "/dev"]) == "/dev":
             return devpath
-        log.debug("%s is not a device file.", devpath)
 
         if os.path.exists(devpath):
             raise FileExistsError(devpath)
@@ -407,9 +417,16 @@ class Storage:
         Install partitions and filesystems on empty disks.
         """
 
-        self._partitions = _BlockDevice.partition(
-            self._device, self._cfg["layout"]
-        )
+        for part_desc in self._cfg["layout"]:
+            _BlockDevice.create_partition(
+                self._device,
+                part_desc["start"],
+                part_desc["end"],
+                part_desc["typecode"],
+            )
+        _BlockDevice.partprobe(self._device)
+        self._partitions = _BlockDevice.get_partitions(self._device)
+
         log.info(
             "Created partitions for %s: %s", self._device, self._partitions
         )
