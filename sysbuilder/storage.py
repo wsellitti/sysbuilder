@@ -44,6 +44,21 @@ class _BlockDevice:
         return children
 
     @staticmethod
+    def is_disk(devpath: str) -> bool:
+        """Return true if the block device a disk device."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "disk"
+
+    @staticmethod
+    def is_loop(devpath: str) -> bool:
+        """Return true if the block device a loop device."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "loop"
+
+    @staticmethod
+    def is_part(devpath: str) -> bool:
+        """Return true if the block device a disk partition."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "part"
+
+    @staticmethod
     def list_all() -> List[Dict[Any, Any]]:
         """List all block devices."""
 
@@ -167,17 +182,15 @@ class _BlockDevice:
 
         subprocess.run(["partprobe", devpath], check=True)
 
-        blockdevs = _BlockDevice.list_one(devpath=devpath).get("children")
-        if blockdevs is None:
-            return []
+        blockdevs = _BlockDevice.get_child_devices(devpath=devpath, depth=1)
 
         parts = []
 
         for block in blockdevs:
-            part = os.path.join("/dev", block["name"])
-            if not os.path.exists(part):
-                raise BlockDeviceNotFoundException(part)
-            parts.append(part)
+            if not os.path.exists(block["path"]):
+                raise BlockDeviceNotFoundException(block["path"])
+            if _BlockDevice.is_part(block["path"]):
+                parts.append(block["path"])
 
         return parts
 
@@ -240,7 +253,9 @@ class _VirtualDiskImage:
         if os.path.exists(devpath):
             raise FileExistsError(devpath)
 
-        subprocess.run(["truncate", "-s", size, devpath], check=True)
+        subprocess.run(
+            ["truncate", "-s", size, devpath], check=True, capture_output=True
+        )
 
         return _VirtualDiskImage.activate(devpath)
 
