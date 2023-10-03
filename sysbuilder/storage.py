@@ -93,12 +93,28 @@ class _BlockDevice:
 
         log.debug("Checking for block devices.")
         lsblk = subprocess.run(
-            ["lsblk", "--json"],
+            ["lsblk", "-O", "--json"],
             capture_output=True,
             check=True,
             encoding="utf-8",
-        )
-        return json.loads(lsblk.stdout)["blockdevices"]
+        ).stdout
+        block_devices = json.loads(lsblk)["blockdevices"]
+
+        # For whatever reason this was removed in a recent version of lsblk
+        for dev in block_devices:
+            if dev["type"] == "loop":
+                if "back-file" in dev:
+                    continue
+                with open(
+                    os.path.join(
+                        ["/sys", "block", dev["name"], "loop", "backing_file"]
+                    ),
+                    mode="r",
+                    encoding="utf-8"
+                ) as f:
+                    dev["back-file"] = f.read()
+
+        return block_devices
 
     @staticmethod
     def list_one(devpath: str) -> Dict[Any, Any]:
@@ -110,12 +126,26 @@ class _BlockDevice:
             raise BlockDeviceNotFoundException
 
         lsblk = subprocess.run(
-            ["lsblk", "--json", devpath],
+            ["lsblk", "-O", "--json", devpath],
             capture_output=True,
             check=True,
             encoding="utf-8",
-        )
-        return json.loads(lsblk.stdout)["blockdevices"][0]
+        ).stdout
+        dev = json.loads(lsblk)["blockdevices"][0]
+
+        # For whatever reason this was removed in a recent version of lsblk
+        if dev["type"] == "loop":
+            if "back-file" not in dev:
+                with open(
+                    os.path.join(
+                        ["/sys", "block", dev["name"], "loop", "backing_file"]
+                    ),
+                    mode="r",
+                    encoding="utf-8"
+                ) as f:
+                    dev["back-file"] = f.read()
+
+        return dev
 
     @staticmethod
     def partition(devpath: str, layout: list) -> list:
