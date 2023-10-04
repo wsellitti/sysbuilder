@@ -18,6 +18,23 @@ class _BlockDevice:
     """Linux block device commands."""
 
     @staticmethod
+    def is_disk(devpath: str) -> bool:
+        """Return true if the block device a disk device."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "disk"
+
+    @staticmethod
+    def is_loop(devpath: str) -> bool:
+        """Return true if the block device a loop device."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "loop"
+
+    @staticmethod
+    def is_part(devpath: str) -> bool:
+        """Return true if the block device a disk partition."""
+        return _BlockDevice.list_one(devpath=devpath)["type"] == "part"
+
+    # Find block devices
+
+    @staticmethod
     def get_child_devices(
         devpath: str, depth: int = -1
     ) -> List[Dict[Any, Any]]:
@@ -45,32 +62,25 @@ class _BlockDevice:
         return children
 
     @staticmethod
-    def is_disk(devpath: str) -> bool:
-        """Return true if the block device a disk device."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "disk"
-
-    @staticmethod
-    def is_loop(devpath: str) -> bool:
-        """Return true if the block device a loop device."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "loop"
-
-    @staticmethod
-    def is_part(devpath: str) -> bool:
-        """Return true if the block device a disk partition."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "part"
-
-    @staticmethod
     def list_all() -> List[Dict[Any, Any]]:
         """List all block devices."""
 
-        log.debug("Checking for block devices.")
-        lsblk = subprocess.run(
-            ["lsblk", "-O", "--json"],
-            capture_output=True,
-            check=True,
-            encoding="utf-8",
-        ).stdout
-        block_devices = json.loads(lsblk)["blockdevices"]
+        try:
+            lsblk = subprocess.run(
+                ["lsblk", "-O", "--json"],
+                capture_output=True,
+                check=True,
+                encoding="utf-8",
+            ).stdout
+        except: subprocess.CalledProcessError as lsblk_error:
+            if lsblk_error.returncode == 64:
+                raise BlockDeviceNotFoundException("Unable to retrieve block devices.")
+            raise
+
+        try:
+            dev = json.loads(lsblk)["blockdevices"][0]
+        except json.JSONDecodeError as json_err:
+            raise BlockDeviceNotFoundException from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         for dev in block_devices:
@@ -92,18 +102,22 @@ class _BlockDevice:
     def list_one(devpath: str) -> Dict[Any, Any]:
         """List one block device."""
 
-        log.debug("Checking for block device: %s.", devpath)
+        try:
+            lsblk = subprocess.run(
+                ["lsblk", "-O", "--json", devpath],
+                capture_output=True,
+                check=True,
+                encoding="utf-8",
+            ).stdout
+        except subprocess.CalledProcessError as lsblk_error:
+            if lsblk_error.returncode == 32:
+                raise BlockDeviceNotFoundException(f"{devpath} is not a block device") from lsblk_error
+            raise
 
-        if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundException
-
-        lsblk = subprocess.run(
-            ["lsblk", "-O", "--json", devpath],
-            capture_output=True,
-            check=True,
-            encoding="utf-8",
-        ).stdout
-        dev = json.loads(lsblk)["blockdevices"][0]
+        try:
+            dev = json.loads(lsblk)["blockdevices"][0]
+        except json.JSONDecodeError as json_err:
+            raise BlockDeviceNotFoundException from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         if dev["type"] == "loop":
@@ -118,6 +132,8 @@ class _BlockDevice:
                     dev["back-file"] = f.read()
 
         return dev
+
+    # Manipulate block devices
 
     @staticmethod
     def create_partition(
