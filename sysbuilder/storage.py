@@ -232,47 +232,48 @@ class _VirtualDiskImage:
     """Disk image file commands."""
 
     @staticmethod
-    def activate(img_file: str) -> str:
+    def activate(path: str) -> str:
         """
         Activates a storage image as a loop device, or returns the already
         active loop device.
         """
 
-        loopdevices = _BlockDevice.list_all()
-        for loopdev in loopdevices:
-            if loopdev["back-file"] == img_file:
-                return loopdev["path"]
-        log.debug("%s is not already active.", img_file)
+        path = os.path.abspath(path)
+
+        loopdevices = _VirtualDiskImage.find_active_devices(path)
+        if loopdevices:
+            return loopdevices[0]
+        log.debug("%s is not already active.", path)
 
         # Activate device.
-        log.debug("Run %s", ["losetup", "-f", img_file])
+        log.debug("Run %s", ["losetup", "-f", path])
         try:
             subprocess.run(
-                ["losetup", "-f", img_file], check=True, capture_output=True
+                ["losetup", "-f", path], check=True, capture_output=True
             )
         except subprocess.CalledProcessError as losetup_err:
-            raise DeviceActivationException(img_file) from losetup_err
+            raise DeviceActivationException(path) from losetup_err
 
         # Recheck for device and return it now.
         loopdevices = _BlockDevice.list_all()
         for loopdev in loopdevices:
-            if loopdev["back-file"] == img_file:
-                return loopdev["path"]
+            if loopdev["back-file"] == path:
+                return path
 
         # Something is wrong
-        raise BlockDeviceNotFoundException(f"Missing loopdevice for {img_file}")
+        raise BlockDeviceNotFoundException(f"Missing loopdevice for {path}")
 
     @staticmethod
-    def create(img_path: str = "disk.img", size: str = "32G") -> str:
+    def create(path: str = "disk.img", size: str = "32G") -> str:
         """
         Create a disk image file, activate it as a loop device, and return the
         path to the loop device.
 
         Params
         ======
-        - img_path (str): Path to an image file or device file. Defaults to
+        - path (str): Path to an image file or device file. Defaults to
           "disk.img".
-        - size (str): Size of image file. Only used if img_path points to a
+        - size (str): Size of image file. Only used if path points to a
           nonexistant file. Defaults to "32G"
 
         Returns
@@ -280,11 +281,7 @@ class _VirtualDiskImage:
         (str) The path to the loop device.
         """
 
-        devpath = os.path.abspath(img_path)
-
-        # The provided disk is in /dev, which means its a writable device.
-        if os.path.commonpath([devpath, "/dev"]) == "/dev":
-            return devpath
+        devpath = os.path.abspath(path)
 
         if os.path.exists(devpath):
             raise FileExistsError(devpath)
@@ -305,7 +302,7 @@ class _VirtualDiskImage:
         if loopdev["type"] != "loop":
             raise ValueError(f"{devpath} is not a loop device!")
 
-        subprocess.run(["losetup", "-d", devpath], check=True)
+        subprocess.run(["losetup", "-d", devpath], check=True, capture_output=True)
 
     @staticmethod
     def find_active_devices(path: str) -> List[str]:
@@ -317,7 +314,7 @@ class _VirtualDiskImage:
         loopdevs = _BlockDevice.list_all()
         active_devices = []
         for dev in loopdevs:
-            if dev["type"] == "loop" and dev["back-file"] == path:
+            if dev.get("back-file") == path:
                 active_devices.append(dev["path"])
 
         return active_devices
