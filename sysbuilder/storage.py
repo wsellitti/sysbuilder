@@ -6,8 +6,9 @@ import os
 import subprocess
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
-    BlockDeviceNotFoundException,
-    DeviceActivationException,
+    BlockDeviceExistsError,
+    BlockDeviceNotFoundError,
+    DeviceActivationError,
     PartitionCreateError,
     ProbeError,
 )
@@ -75,7 +76,7 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 64:
-                raise BlockDeviceNotFoundException(
+                raise BlockDeviceNotFoundError(
                     "Unable to retrieve block devices."
                 ) from lsblk_error
             raise
@@ -83,7 +84,7 @@ class _BlockDevice:
         try:
             block_devices = json.loads(lsblk)["blockdevices"]
         except json.JSONDecodeError as json_err:
-            raise BlockDeviceNotFoundException from json_err
+            raise BlockDeviceNotFoundError from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         for dev in block_devices:
@@ -114,7 +115,7 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 32:
-                raise BlockDeviceNotFoundException(
+                raise BlockDeviceNotFoundError(
                     f"{devpath} is not a block device"
                 ) from lsblk_error
             raise
@@ -122,7 +123,7 @@ class _BlockDevice:
         try:
             dev = json.loads(lsblk)["blockdevices"][0]
         except json.JSONDecodeError as json_err:
-            raise BlockDeviceNotFoundException from json_err
+            raise BlockDeviceNotFoundError from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         if dev["type"] == "loop":
@@ -149,7 +150,7 @@ class _BlockDevice:
     ) -> None:
         """
         Partition a disk according to what's defined in the layout. Raises
-        BlockDeviceExistsException if the disk already has partitions.
+        BlockDeviceExistsError if the disk already has partitions.
 
         Params
         ======
@@ -241,18 +242,16 @@ class _VirtualDiskImage:
         path = os.path.abspath(path)
 
         loopdevices = _VirtualDiskImage.find_active_devices(path)
-        if loopdevices:
-            return loopdevices[0]
-        log.debug("%s is not already active.", path)
+        if len(loopdevices) > 0:
+            raise BlockDeviceExistsError(f"{path} has active loop devices: {loopdevices}.")
 
         # Activate device.
-        log.debug("Run %s", ["losetup", "-f", path])
         try:
             subprocess.run(
                 ["losetup", "-f", path], check=True, capture_output=True
             )
         except subprocess.CalledProcessError as losetup_err:
-            raise DeviceActivationException(path) from losetup_err
+            raise DeviceActivationError(path) from losetup_err
 
         # Recheck for device and return it now.
         loopdevices = _BlockDevice.list_all()
@@ -261,7 +260,7 @@ class _VirtualDiskImage:
                 return path
 
         # Something is wrong
-        raise BlockDeviceNotFoundException(f"Missing loopdevice for {path}")
+        raise BlockDeviceNotFoundError(f"Missing loopdevice for {path}")
 
     @staticmethod
     def create(path: str = "disk.img", size: str = "32G") -> str:
@@ -307,13 +306,12 @@ class _VirtualDiskImage:
     @staticmethod
     def find_active_devices(path: str) -> List[str]:
         """
-        Find active _BlockDevs and _FileSystems using `path` as a backing
-        file.
+        Find active virtual disk block devices using the disk image as
+        background storage.
         """
 
-        loopdevs = _BlockDevice.list_all()
         active_devices = []
-        for dev in loopdevs:
+        for dev in _BlockDevice.list_all():
             if dev.get("back-file") == path:
                 active_devices.append(dev["path"])
 
@@ -337,7 +335,7 @@ class _FileSystem:
         """
 
         if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundException
+            raise BlockDeviceNotFoundError
 
         if fs_args is None:
             fs_args = []
@@ -394,7 +392,7 @@ class _FileSystem:
         """
 
         if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundException(devpath)
+            raise BlockDeviceNotFoundError(devpath)
 
 
 class Storage:
@@ -415,7 +413,7 @@ class Storage:
         self._cfg = storage
 
         self._device = _VirtualDiskImage.create(
-            img_path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
+            path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
         log.info("Found device file: %s", self._device)
 

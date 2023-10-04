@@ -1,25 +1,25 @@
 """Exceptions for sysbuilder."""
 
 
-class _SysBuilderException(Exception):
+class _SysBuilderError(Exception):
     """Generic sysbuilder exception."""
 
 
-class BlockDeviceExistsException(_SysBuilderException):
+class BlockDeviceExistsError(_SysBuilderError):
     """Unexpected block device file found."""
 
 
-class BlockDeviceNotFoundException(_SysBuilderException):
+class BlockDeviceNotFoundError(_SysBuilderError):
     """Expected block device missing."""
 
 
-class DeviceActivationException(_SysBuilderException):
+class DeviceActivationError(_SysBuilderError):
     """Cannot activate device."""
 
 
-class PartitionCreateError(_SysBuilderException):
+class PartitionCreateError(_SysBuilderError):
     """Unable to partition a device."""
 
 
-class ProbeError(_SysBuilderException):
+class ProbeError(_SysBuilderError):
     """Device Probe failed."""
