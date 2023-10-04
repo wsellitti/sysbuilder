@@ -7,6 +7,7 @@ import subprocess
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
     BlockDeviceNotFoundException,
+    DeviceActivationException,
     PartitionCreateError,
     ProbeError,
 )
@@ -72,13 +73,15 @@ class _BlockDevice:
                 check=True,
                 encoding="utf-8",
             ).stdout
-        except: subprocess.CalledProcessError as lsblk_error:
+        except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 64:
-                raise BlockDeviceNotFoundException("Unable to retrieve block devices.")
+                raise BlockDeviceNotFoundException(
+                    "Unable to retrieve block devices."
+                ) from lsblk_error
             raise
 
         try:
-            dev = json.loads(lsblk)["blockdevices"][0]
+            block_devices = json.loads(lsblk)["blockdevices"]
         except json.JSONDecodeError as json_err:
             raise BlockDeviceNotFoundException from json_err
 
@@ -93,7 +96,7 @@ class _BlockDevice:
                     ),
                     mode="r",
                     encoding="utf-8",
-                ) as f:
+                ) as f:  # pylint: disable=C0103
                     dev["back-file"] = f.read()
 
         return block_devices
@@ -111,7 +114,9 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 32:
-                raise BlockDeviceNotFoundException(f"{devpath} is not a block device") from lsblk_error
+                raise BlockDeviceNotFoundException(
+                    f"{devpath} is not a block device"
+                ) from lsblk_error
             raise
 
         try:
@@ -128,7 +133,7 @@ class _BlockDevice:
                     ),
                     mode="r",
                     encoding="utf-8",
-                ) as f:
+                ) as f:  # pylint: disable=C0103
                     dev["back-file"] = f.read()
 
         return dev
@@ -236,18 +241,23 @@ class _VirtualDiskImage:
         loopdevices = _BlockDevice.list_all()
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
-                return loopdev["name"]
-        log.info("%s does not have an active loop device.", img_file)
+                return loopdev["path"]
+        log.debug("%s is not already active.", img_file)
 
         # Activate device.
         log.debug("Run %s", ["losetup", "-f", img_file])
-        subprocess.run(["losetup", "-f", img_file], check=True)
+        try:
+            subprocess.run(
+                ["losetup", "-f", img_file], check=True, capture_output=True
+            )
+        except subprocess.CalledProcessError as losetup_err:
+            raise DeviceActivationException(img_file) from losetup_err
 
         # Recheck for device and return it now.
         loopdevices = _BlockDevice.list_all()
         for loopdev in loopdevices:
             if loopdev["back-file"] == img_file:
-                return loopdev["name"]
+                return loopdev["path"]
 
         # Something is wrong
         raise BlockDeviceNotFoundException(f"Missing loopdevice for {img_file}")

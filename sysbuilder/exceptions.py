@@ -5,20 +5,16 @@ class _SysBuilderException(Exception):
     """Generic sysbuilder exception."""
 
 
-class DeviceExistsException(_SysBuilderException):
-    """Unexpected device file found."""
-
-
-class BlockDeviceExistsException(DeviceExistsException):
+class BlockDeviceExistsException(_SysBuilderException):
     """Unexpected block device file found."""
 
 
-class DeviceNotFoundException(_SysBuilderException):
-    """Expected device file missing."""
-
-
-class BlockDeviceNotFoundException(DeviceNotFoundException):
+class BlockDeviceNotFoundException(_SysBuilderException):
     """Expected block device missing."""
+
+
+class DeviceActivationException(_SysBuilderException):
+    """Cannot activate device."""
 
 
 class PartitionCreateError(_SysBuilderException):
