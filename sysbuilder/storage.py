@@ -229,8 +229,11 @@ class _BlockDevice:
             ) from probe_err
 
 
-class _VirtualDiskImage:
-    """Disk image file commands."""
+class _LoopDevice:
+    """
+    Loop device specific commands, once activated loop devices behave like
+    block devices.
+    """
 
     @staticmethod
     def activate(path: str) -> str:
