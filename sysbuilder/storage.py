@@ -282,7 +282,7 @@ class _LoopDevice:
             raise LoopDeviceError("Cannot detach all devices.") from losetup_err
 
     @staticmethod
-    def get_one(devpath: str) -> Dict[Any, Any]:
+    def list_one(devpath: str) -> Dict[Any, Any]:
         """Get details for one loop device."""
 
         try:
@@ -305,7 +305,7 @@ class _LoopDevice:
             ) from json_err
 
     @staticmethod
-    def get_all() -> List[Dict[Any, Any]]:
+    def list_all() -> List[Dict[Any, Any]]:
         """Return all loop devices."""
 
         try:
@@ -360,7 +360,7 @@ class _LoopDevice:
         return _LoopDevice.attach(devpath)
 
     @staticmethod
-    def get_associated(path: str) -> List[str]:
+    def list_associated(path: str) -> List[str]:
         """
         Find active virtual disk block devices using the disk image as
         background storage.
@@ -385,7 +385,7 @@ class _LoopDevice:
 
         for line in losetup.split("\n"):
             devpath = line.split(":")[0]
-            devices.append(_LoopDevice.get_one(devpath=devpath))
+            devices.append(_LoopDevice.list_one(devpath=devpath))
 
         return devices
 
