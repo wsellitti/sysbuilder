@@ -7,8 +7,9 @@ import subprocess
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
     BlockDeviceNotFoundError,
-    DeviceActivationError,
-    LoopDeviceNotFoundError,
+    BlockDeviceError,
+    LoopDeviceError,
+    NotABlockDeviceError,
     PartitionCreateError,
     ProbeError,
 )
@@ -76,7 +77,7 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 64:
-                raise BlockDeviceNotFoundError(
+                raise BlockDeviceError(
                     "Unable to retrieve block devices."
                 ) from lsblk_error
             raise
@@ -84,7 +85,7 @@ class _BlockDevice:
         try:
             block_devices = json.loads(lsblk)["blockdevices"]
         except json.JSONDecodeError as json_err:
-            raise BlockDeviceNotFoundError from json_err
+            raise BlockDeviceError("Unable to retrieve block devices.") from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         for dev in block_devices:
@@ -115,15 +116,13 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 32:
-                raise BlockDeviceNotFoundError(
-                    f"{devpath} is not a block device"
-                ) from lsblk_error
+                raise NotABlockDeviceError(devpath) from lsblk_error
             raise
 
         try:
             dev = json.loads(lsblk)["blockdevices"][0]
         except json.JSONDecodeError as json_err:
-            raise BlockDeviceNotFoundError from json_err
+            raise BlockDeviceError(f"Cannot find {devpath}") from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         if dev["type"] == "loop":
@@ -276,7 +275,7 @@ class _LoopDevice:
                 ["losetup", "--detach-all"], check=True, capture_output=True
             )
         except subprocess.CalledProcessError as losetup_err:
-            raise LoopDeviceError(f"Cannot detach {devpath}") from losetup_err
+            raise LoopDeviceError("Cannot detach all devices.") from losetup_err
 
     @staticmethod
     def get_one(devpath: str) -> Dict[Any, Any]:
@@ -397,7 +396,7 @@ class _FileSystem:
         """
 
         if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundError
+            raise BlockDeviceNotFoundError(devpath)
 
         if fs_args is None:
             fs_args = []
