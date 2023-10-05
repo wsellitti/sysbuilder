@@ -236,7 +236,7 @@ class _LoopDevice:
     """
 
     @staticmethod
-    def activate(path: str) -> str:
+    def attach(path: str) -> str:
         """
         Activates a storage image as a loop device, or returns the already
         active loop device.
@@ -244,26 +244,15 @@ class _LoopDevice:
 
         path = os.path.abspath(path)
 
-        loopdevices = _VirtualDiskImage.find_active_devices(path)
-        if len(loopdevices) > 0:
-            raise BlockDeviceExistsError(f"{path} has active loop devices: {loopdevices}.")
-
-        # Activate device.
         try:
-            subprocess.run(
-                ["losetup", "-f", path], check=True, capture_output=True
-            )
+            return subprocess.run(
+                ["losetup", "--show", "--find", "--nooverlap", path],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            ).stdout
         except subprocess.CalledProcessError as losetup_err:
             raise DeviceActivationError(path) from losetup_err
-
-        # Recheck for device and return it now.
-        loopdevices = _BlockDevice.list_all()
-        for loopdev in loopdevices:
-            if loopdev["back-file"] == path:
-                return path
-
-        # Something is wrong
-        raise BlockDeviceNotFoundError(f"Missing loopdevice for {path}")
 
     @staticmethod
     def create(path: str = "disk.img", size: str = "32G") -> str:
@@ -295,16 +284,22 @@ class _LoopDevice:
         return _VirtualDiskImage.activate(devpath)
 
     @staticmethod
-    def deactivate(devpath: str) -> None:
+    def detach(devpath: str) -> None:
         """Deactivates an active loop device."""
 
-        # Check if device is already activated and return that.
-        loopdev = _BlockDevice.list_one(devpath=devpath)
+        devpath = os.path.abspath(devpath)
 
-        if loopdev["type"] != "loop":
-            raise ValueError(f"{devpath} is not a loop device!")
+        subprocess.run(
+            ["losetup", "--detach", devpath], check=True, capture_output=True
+        )
 
-        subprocess.run(["losetup", "-d", devpath], check=True, capture_output=True)
+    @staticmethod
+    def detach_all() -> None:
+        """Deactivate all active loop devices."""
+
+        subprocess.run(
+            ["losetup", "--detach-all"], check=True, capture_output=True
+        )
 
     @staticmethod
     def find_active_devices(path: str) -> List[str]:
