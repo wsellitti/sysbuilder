@@ -323,15 +323,14 @@ class _LoopDevice:
     # Virtual Disk Image Specific functions ---
 
     @staticmethod
-    def create(path: str = "disk.img", size: str = "32G") -> str:
+    def create(path: str, size: str = "32G") -> str:
         """
         Create a disk image file, activate it as a loop device, and return the
         path to the loop device.
 
         Params
         ======
-        - path (str): Path to an image file or device file. Defaults to
-          "disk.img".
+        - path (str): Path to an image file or device file.
         - size (str): Size of image file. Only used if path points to a
           nonexistant file. Defaults to "32G"
 
@@ -349,39 +348,30 @@ class _LoopDevice:
             ["truncate", "-s", size, devpath], check=True, capture_output=True
         )
 
-        return _VirtualDiskImage.activate(devpath)
+        return _LoopDevice.attach(devpath)
 
     @staticmethod
-    def detach(devpath: str) -> None:
-        """Deactivates an active loop device."""
-
-        devpath = os.path.abspath(devpath)
-
-        subprocess.run(
-            ["losetup", "--detach", devpath], check=True, capture_output=True
-        )
-
-    @staticmethod
-    def detach_all() -> None:
-        """Deactivate all active loop devices."""
-
-        subprocess.run(
-            ["losetup", "--detach-all"], check=True, capture_output=True
-        )
-
-    @staticmethod
-    def find_active_devices(path: str) -> List[str]:
+    def get_associated(path: str) -> List[str]:
         """
         Find active virtual disk block devices using the disk image as
         background storage.
         """
 
-        active_devices = []
-        for dev in _BlockDevice.list_all():
-            if dev.get("back-file") == path:
-                active_devices.append(dev["path"])
+        devices = []
 
-        return active_devices
+        try:
+            losetup = subprocess.run(["losetup", "--associated", path], check=True, capture_output=True, encoding="utf-8").stdout
+        except subprocess.CalledProcessError as losetup_err:
+            raise LoopDeviceError("Cannot query loopback devices") from losetup_err
+
+        if losetup == "":
+            return []
+
+        for line in losetup.split("\n"):
+            devpath = line.split(":")[0]
+            devices.append(_LoopDevice.get_one(devpath=devpath))
+
+        return devices
 
 
 class _FileSystem:
