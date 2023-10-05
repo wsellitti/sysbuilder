@@ -85,7 +85,9 @@ class _BlockDevice:
         try:
             block_devices = json.loads(lsblk)["blockdevices"]
         except json.JSONDecodeError as json_err:
-            raise BlockDeviceError("Unable to retrieve block devices.") from json_err
+            raise BlockDeviceError(
+                "Unable to retrieve block devices."
+            ) from json_err
 
         # For whatever reason this was removed in a recent version of lsblk
         for dev in block_devices:
@@ -261,7 +263,9 @@ class _LoopDevice:
 
         try:
             subprocess.run(
-                ["losetup", "--detach", devpath], check=True, capture_output=True
+                ["losetup", "--detach", devpath],
+                check=True,
+                capture_output=True,
             )
         except subprocess.CalledProcessError as losetup_err:
             raise LoopDeviceError(f"Cannot detach {devpath}") from losetup_err
@@ -365,9 +369,16 @@ class _LoopDevice:
         devices = []
 
         try:
-            losetup = subprocess.run(["losetup", "--associated", path], check=True, capture_output=True, encoding="utf-8").stdout
+            losetup = subprocess.run(
+                ["losetup", "--associated", path],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            ).stdout
         except subprocess.CalledProcessError as losetup_err:
-            raise LoopDeviceError("Cannot query loopback devices") from losetup_err
+            raise LoopDeviceError(
+                "Cannot query loopback devices"
+            ) from losetup_err
 
         if losetup == "":
             return []
@@ -473,7 +484,7 @@ class Storage:
 
         self._cfg = storage
 
-        self._device = _VirtualDiskImage.create(
+        self._device = _LoopDevice.create(
             path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
         log.info("Found device file: %s", self._device)
