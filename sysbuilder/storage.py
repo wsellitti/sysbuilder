@@ -6,9 +6,9 @@ import os
 import subprocess
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
-    BlockDeviceExistsError,
     BlockDeviceNotFoundError,
     DeviceActivationError,
+    LoopDeviceNotFoundError,
     PartitionCreateError,
     ProbeError,
 )
@@ -253,6 +253,74 @@ class _LoopDevice:
             ).stdout
         except subprocess.CalledProcessError as losetup_err:
             raise DeviceActivationError(path) from losetup_err
+
+    @staticmethod
+    def detach(devpath: str) -> None:
+        """Deactivates an active loop device."""
+
+        devpath = os.path.abspath(devpath)
+
+        subprocess.run(
+            ["losetup", "--detach", devpath], check=True, capture_output=True
+        )
+
+    @staticmethod
+    def detach_all() -> None:
+        """Deactivate all active loop devices."""
+
+        subprocess.run(
+            ["losetup", "--detach-all"], check=True, capture_output=True
+        )
+
+    @staticmethod
+    def get_one(devpath: str) -> Dict[Any, Any]:
+        """Get details for one loop device."""
+
+        try:
+            losetup = subprocess.run(
+                ["losetup", "--json", "--output-all", devpath],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            ).stdout
+        except subprocess.CalledProcessError as losetup_err:
+            raise LoopDeviceNotFoundError(
+                "Cannot query loopback devices!"
+            ) from losetup_err
+
+        try:
+            return json.loads(losetup)["loopdevices"][0]
+        except json.JSONDecodeError as json_err:
+            raise LoopDeviceNotFoundError(
+                "Cannot query loopback devices!"
+            ) from json_err
+
+    @staticmethod
+    def get_all() -> List[Dict[Any, Any]]:
+        """Return all loop devices."""
+
+        try:
+            losetup = subprocess.run(
+                ["losetup", "--json", "--output-all", "--list"],
+                capture_output=True,
+                check=True,
+                encoding="utf-8",
+            ).stdout
+        except subprocess.CalledProcessError as losetup_err:
+            if losetup_err.returncode == 64:
+                raise BlockDeviceNotFoundError(
+                    "Unable to retrieve block devices."
+                ) from losetup_err
+            raise
+
+        try:
+            return json.loads(losetup)["loopdevices"]
+        except json.JSONDecodeError as json_err:
+            raise LoopDeviceNotFoundError(
+                "Unable to retrieve block devices."
+            ) from json_err
+
+    # Virtual Disk Image Specific functions ---
 
     @staticmethod
     def create(path: str = "disk.img", size: str = "32G") -> str:
