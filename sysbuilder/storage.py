@@ -67,7 +67,7 @@ class _BlockDevice:
 
         try:
             lsblk = subprocess.run(
-                ["lsblk", "-O", "--json"],
+                ["lsblk", "--output-all", "--json"],
                 capture_output=True,
                 check=True,
                 encoding="utf-8",
@@ -108,7 +108,7 @@ class _BlockDevice:
 
         try:
             lsblk = subprocess.run(
-                ["lsblk", "-O", "--json", devpath],
+                ["lsblk", "--output-all", "--json", devpath],
                 capture_output=True,
                 check=True,
                 encoding="utf-8",
@@ -185,9 +185,9 @@ class _BlockDevice:
             subprocess.run(
                 [
                     "sgdisk",
-                    "-n",
+                    "--new",
                     ":".join([count, str(start_sector), str(end_sector)]),
-                    "-t",
+                    "--typecode",
                     ":".join([count, typecode]),
                 ],
                 check=True,
@@ -358,7 +358,9 @@ class _LoopDevice:
             raise FileExistsError(devpath)
 
         subprocess.run(
-            ["truncate", "-s", size, devpath], check=True, capture_output=True
+            ["truncate", "--size", size, devpath],
+            check=True,
+            capture_output=True,
         )
 
         return _LoopDevice.attach(devpath)
