@@ -556,14 +556,12 @@ class Storage:
             fs_label = filesystem_descriptor.get("fs_label")
             fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-L")
             fs_args = filesystem_descriptor.get("fs_args")
-            fs_create_command = filesystem_descriptor.get("fs_create_command")
             _FileSystem.create(
                 devpath=part,
                 fs_args=fs_args,
                 fs_label=fs_label,
                 fs_label_flag=fs_label_flag,
                 fs_type=fs_type,
-                fs_create_command=fs_create_command,
             )
             log.info("Created %s on %s", fs_type, part)
 
