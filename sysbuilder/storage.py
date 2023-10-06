@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from sysbuilder.exceptions import (
     BlockDeviceNotFoundError,
     BlockDeviceError,
+    FileSystemError,
     LoopDeviceError,
 )
 
@@ -227,6 +228,102 @@ class _BlockDevice:
             ) from probe_err
 
 
+class _FileSystem:
+    """Linux part device commands."""
+
+    @staticmethod
+    def create(
+        devpath: str,
+        fs_type: str,
+        fs_label: str | None = None,
+        fs_label_flag: str = "-L",
+        fs_args: list | None = None,
+    ) -> None:
+        """
+        Create a filesystem on a partition.
+        """
+
+        blockdev = _BlockDevice.list_one(devpath=devpath)
+
+        if blockdev["fstype"] is not None:
+            raise FileExistsError(f"{blockdev['fstype']} detected on {devpath}")
+
+        mkfs_cmd = ["mkfs", "--type", fs_type]
+        if fs_type == "swap":
+            mkfs_cmd = ["mkswap"]
+
+        mkfs_cmd.extend([] if fs_label is None else [fs_label_flag, fs_label])
+
+        mkfs_cmd.extend([] if fs_args is None else fs_args)
+
+        mkfs_cmd.append(devpath)
+
+        try:
+            subprocess.run(mkfs_cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as mkfs_err:
+            raise FileSystemError(
+                f"Cannot create {fs_type} on {devpath}"
+            ) from mkfs_err
+
+    @staticmethod
+    def mount(devpath: str, mountpoint: str) -> None:
+        """
+        Mount device on mountpoint, creating mountpoint if it does not exist.
+
+        Params
+        ======
+        - devpath (str): Path to device file in /dev.
+        - mountpoint (str): Mountpoint on host filesystem.
+        """
+
+        if not (os.path.exists(mountpoint) and os.path.isdir(mountpoint)):
+            raise FileNotFoundError(mountpoint)
+
+        # Make sure device isn't already mounted there.
+        mountpoints = _BlockDevice.list_one(devpath=devpath).get(
+            "mountpoints", []
+        )
+        for existing_mount in mountpoints:
+            if existing_mount == mountpoint:
+                return
+
+        try:
+            subprocess.run(
+                ["mount", devpath, mountpoint],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+        except subprocess.CalledProcessError as mount_err:
+            raise FileSystemError(
+                f"Cannot mount {devpath} on {mountpoint}"
+            ) from mount_err
+
+    @staticmethod
+    def unmount_all_mounts(devpath: str) -> None:
+        """
+        Unmount a device.
+
+        Params
+        ======
+        - devpath (str): Device path.
+        """
+
+        # Make sure device isn't already mounted there.
+        mountpoints = _BlockDevice.list_one(devpath=devpath).get(
+            "mountpoints", []
+        )
+        for existing_mount in mountpoints:
+            try:
+                subprocess.run(
+                    ["unmount", existing_mount], check=True, capture_output=True
+                )
+            except subprocess.CalledProcessError as unmount_err:
+                raise FileSystemError(
+                    f"Cannot unmount {devpath} from {existing_mount}."
+                ) from unmount_err
+
+
 class _LoopDevice:
     """
     Loop device specific commands, once activated loop devices behave like
@@ -394,83 +491,6 @@ class _LoopDevice:
             devices.append(_LoopDevice.list_one(devpath=devpath))
 
         return devices
-
-
-class _FileSystem:
-    """Linux part device commands."""
-
-    @staticmethod
-    def create(
-        devpath: str,
-        fs_type: str,
-        fs_label: str | None = None,
-        fs_label_flag: str = "-L",
-        fs_args: list | None = None,
-        fs_create_command: str | None = None,
-    ) -> None:
-        """
-        Create a filesystem on a partition.
-        """
-
-        if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundError(devpath)
-
-        if fs_args is None:
-            fs_args = []
-
-        if fs_create_command is None:
-            fs_create_command = f"mkfs.{fs_type}"
-
-        mkfs_cmd = [fs_create_command]
-        mkfs_cmd.extend(fs_args)
-        if fs_label is not None:
-            mkfs_cmd.extend([fs_label_flag, fs_label])
-        mkfs_cmd.append(devpath)
-
-        log.debug("Running %s", mkfs_cmd)
-        subprocess.run(mkfs_cmd, check=True)
-
-    @staticmethod
-    def mount(devpath: str, mountpoint: str) -> None:
-        """
-        Mount device on mountpoint, creating mountpoint if it does not exist.
-
-        Params
-        ======
-        - devpath (str): Path to device file in /dev.
-        - mountpoint (str): Mountpoint on host filesystem.
-        """
-
-        if not (os.path.exists(mountpoint) and os.path.isdir(mountpoint)):
-            raise FileNotFoundError(mountpoint)
-
-        # Make sure device isn't already mounted there.
-        mountpoints = _BlockDevice.list_one(devpath=devpath).get(
-            "mountpoints", []
-        )
-        for existing_mount in mountpoints:
-            if existing_mount == mountpoint:
-                return
-
-        subprocess.run(
-            ["mount", devpath, mountpoint],
-            check=True,
-            capture_output=True,
-            encoding="utf-8",
-        )
-
-    @staticmethod
-    def unmount(devpath: str) -> None:
-        """
-        Unmount a device.
-
-        Params
-        ======
-        - devpath (str): Device path.
-        """
-
-        if not os.path.exists(devpath):
-            raise BlockDeviceNotFoundError(devpath)
 
 
 class Storage:
