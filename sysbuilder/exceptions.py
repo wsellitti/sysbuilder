@@ -6,20 +6,36 @@ class _SysBuilderError(Exception):
 
 
 class BlockDeviceExistsError(_SysBuilderError):
-    """Unexpected block device file found."""
+    """A loop device exists when it should not."""
+
+
+class BlockDeviceError(_SysBuilderError):
+    """Generic error for block devices."""
 
 
 class BlockDeviceNotFoundError(_SysBuilderError):
-    """Expected block device missing."""
+    """Cannot find loop a(ny) block device(s)."""
 
 
-class DeviceActivationError(_SysBuilderError):
-    """Cannot activate device."""
+class LoopDeviceExistsError(_SysBuilderError):
+    """A loop device exists when it should not."""
 
 
-class PartitionCreateError(_SysBuilderError):
-    """Unable to partition a device."""
+class LoopDeviceError(_SysBuilderError):
+    """Generic error for loop devices."""
 
 
-class ProbeError(_SysBuilderError):
-    """Device Probe failed."""
+class LoopDeviceNotFoundError(_SysBuilderError):
+    """Cannot find loop a(ny) loop device(s)."""
+
+
+class FileSystemExistsError(_SysBuilderError):
+    """A file system exists when it should not."""
+
+
+class FileSystemError(_SysBuilderError):
+    """Generic error for file systems."""
+
+
+class FileSystemNotFoundError(_SysBuilderError):
+    """Cannot find loop a(ny) file system(s)."""

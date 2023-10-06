@@ -9,9 +9,6 @@ from sysbuilder.exceptions import (
     BlockDeviceNotFoundError,
     BlockDeviceError,
     LoopDeviceError,
-    NotABlockDeviceError,
-    PartitionCreateError,
-    ProbeError,
 )
 
 log = logging.getLogger(__name__)
@@ -118,7 +115,7 @@ class _BlockDevice:
             ).stdout
         except subprocess.CalledProcessError as lsblk_error:
             if lsblk_error.returncode == 32:
-                raise NotABlockDeviceError(devpath) from lsblk_error
+                raise BlockDeviceNotFoundError(devpath) from lsblk_error
             raise
 
         try:
@@ -198,7 +195,7 @@ class _BlockDevice:
                 encoding="utf-8",
             )
         except subprocess.CalledProcessError as part_err:
-            raise PartitionCreateError(
+            raise BlockDeviceError(
                 f"Cannot create partition {count} on {devpath}!"
             ) from part_err
 
@@ -217,7 +214,7 @@ class _BlockDevice:
     @staticmethod
     def partprobe(devpath: str) -> None:
         """
-        Raises ProbeError.
+        Raises BlockDeviceError.
         """
 
         try:
@@ -225,7 +222,7 @@ class _BlockDevice:
                 ["partprobe", devpath], check=True, capture_output=True
             )
         except subprocess.CalledProcessError as probe_err:
-            raise ProbeError(
+            raise BlockDeviceError(
                 f"Unable to probe {devpath} for partitions."
             ) from probe_err
 
