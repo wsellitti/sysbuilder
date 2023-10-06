@@ -244,7 +244,14 @@ class _LoopDevice:
 
         try:
             return subprocess.run(
-                ["losetup", "--show", "--find", "--nooverlap", path],
+                [
+                    "losetup",
+                    "--show",
+                    "--find",
+                    "--nooverlap",
+                    "--partscan",
+                    path,
+                ],
                 check=True,
                 capture_output=True,
                 encoding="utf-8",
