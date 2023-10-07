@@ -36,9 +36,7 @@ class _BlockDevice:
     # Find block devices
 
     @staticmethod
-    def get_child_devices(
-        devpath: str, depth: int = -1
-    ) -> List[Dict[Any, Any]]:
+    def get_child_devices(devpath: str, depth: int = -1) -> List[str]:
         """
         Get's child devices.
 
@@ -47,6 +45,10 @@ class _BlockDevice:
         - devpath: Device path.
         - depth: How many layers of children to go to. Proving a negative
           number means go forever.
+
+        Returns
+        =======
+        (list) Block device paths.
         """
 
         block_dev = _BlockDevice.list_one(devpath=devpath)
@@ -153,21 +155,20 @@ class _BlockDevice:
 
         Params
         ======
-        - layout (list): A list of dictionaries, each representing a partition
-          on the disk or disk image.
-        - start (str): Sector where the partition should start. Values can be
-          absolute or positions measured in standard notation: "K", "M", "G",
-          "T". Providing and empty string "" will use the next available
-          starting sector. Values beginning with a "+" will start the
-          parittion that distance past the next available starting sector (ie,
-          "+2G" will cause the next partition to start 2 gibibytes after the
-          last partition ended). Values beginning with a "-"  will start the
-          partition that distance from the next available ending sector with
-          enough space (ie, "-2G" will create a partition that starts 2
+        - devpath (list): The device path.
+        - start_sector (str): Sector where the partition should start. Values
+          can be absolute or positions measured in standard notation: "K",
+          "M", "G", "T". Providing and empty string "" will use the next
+          available starting sector. Values beginning with a "+" will start
+          the parittion that distance past the next available starting sector
+          (ie, "+2G" will cause the next partition to start 2 gibibytes after
+          the last partition ended). Values beginning with a "-"  will start
+          the partition that distance from the next available ending sector
+          with enough space (ie, "-2G" will create a partition that starts 2
           gibibytes before the ending most available sector).
-        - end (str): Sector where the partition should end. Values can be
-          absolute or positions measured in standard notation: "K", "M", "G",
-          "T". Providing and empty string "" will use the next available
+        - end_sector (str): Sector where the partition should end. Values can
+          be absolute or positions measured in standard notation: "K", "M",
+          "G", "T". Providing and empty string "" will use the next available
           ending sector from the starting sector. Values beginning with a "+"
           will end the partition that distance past the starting sector (ie,
           "+2G" will create a 2 gibibyte partition). Values beginning with a
