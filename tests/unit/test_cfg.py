@@ -21,7 +21,7 @@ class GoodCfgTest(unittest.TestCase):
     def test_cfg_good(self):
         """Test validation."""
 
-        cfg = Config("tests/data/sample_config_good.json")
+        cfg = Config.from_file("tests/data/sample_config_good.json")
 
         self.assertEqual(cfg._cfg, self.cfg)  # pylint: disable=W0212
 
