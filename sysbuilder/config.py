@@ -117,15 +117,21 @@ class Config:
     -------
     """
 
-    def __init__(self, cfg: str):
+    def __init__(self, cfg: dict):
         """Load configuration and validate."""
+
+        self._cfg = cfg
+
+        self._validate()
+
+    @classmethod
+    def from_file(cls, cfg: str):
+        """Load configuration from a file."""
 
         with open(
             cfg, mode="r", encoding="utf-8"
         ) as f:  # pylint: disable=C0103
-            self._cfg = json.load(f)
-
-        self._validate()
+            return cls(json.load(f))
 
     def _validate(self) -> None:
         """
