@@ -493,6 +493,61 @@ class _LoopDevice:
         return devices
 
 
+class BlockDevice:
+    """
+    Block Device.
+
+    Referring to this device as a string will return it's path.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        """Create block device."""
+
+        self._data = {}
+        self._children = []
+
+        self.update(**kwargs)
+
+    def __str__(self) -> str:
+        return self.path
+
+    @classmethod
+    def from_device_path(cls, devpath: str):
+        """JSON from lsblk becomes a BlockDevice."""
+
+        dev = _BlockDevice.list_one(devpath=devpath)
+        return cls(**dev)
+
+    @classmethod
+    def from_all_devices(cls) -> List:
+        """JSON from lsblk becomes a list of BlockDevices."""
+
+        devs = _BlockDevice.list_all()
+        return [cls(**dev) for dev in devs]
+
+    @property
+    def path(self) -> str:
+        """Return the device path."""
+        return self._data["path"]
+
+    def update(self, **kwargs) -> None:
+        """Updates device data."""
+
+        if "path" in kwargs:
+            if "path" in self._data:
+                raise KeyError("Path already provided.")
+        else:
+            if "path" not in self._data:
+                raise KeyError("Path must be provided.")
+
+        # Convert children dictionaries into BlockDevices.
+        children = kwargs.pop("children", [])
+        for child in children:
+            self._children.append(BlockDevice(**child))
+
+        self._data.update(kwargs)
+
+
 class Storage:
     """
     A storage object representing a storage device, real or image file.
