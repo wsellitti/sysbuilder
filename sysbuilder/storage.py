@@ -535,36 +535,48 @@ class Storage:
     def format(self) -> None:
         """
         Install partitions and filesystems on empty disks.
+
+        As each partition is created check self._device for all partitions,
+        and configure the first one without a filesystem with the filesystem
+        defined in the layout. As filesystems are being created sequentially
+        to partitions, the first partition without a filesystem should always
+        been the one created previously. Once a filesystem is created mount it
+        as per the layout.
+
+        Admittedly this process is susceptible to race conditions if two (or
+        more) partitions were to be created (nearly) simultaneously. As long
+        as the partitions are created in the order they should be in on the
+        disk they will be processed correctly.
         """
 
-        for part_desc in self._cfg["layout"]:
+        for part in self._cfg["layout"]:
             _BlockDevice.create_partition(
-                self._device,
-                part_desc["start"],
-                part_desc["end"],
-                part_desc["typecode"],
+                devpath=self._device["path"],
+                start_sector=part["start"],
+                end_sector=part["end"],
+                typecode=part["typecode"],
             )
-        _BlockDevice.partprobe(self._device)
-        self._partitions = _BlockDevice.get_partitions(self._device)
 
-        log.info(
-            "Created partitions for %s: %s", self._device, self._partitions
-        )
+            fs_cfg = part["filesystem"]
 
-        for count, part in enumerate(self._partitions):
-            filesystem_descriptor = self._cfg["layout"][count]
-            fs_type = filesystem_descriptor["fs_type"]
-            fs_label = filesystem_descriptor.get("fs_label")
-            fs_label_flag = filesystem_descriptor.get("fs_label_flag", "-L")
-            fs_args = filesystem_descriptor.get("fs_args")
-            _FileSystem.create(
-                devpath=part,
-                fs_args=fs_args,
-                fs_label=fs_label,
-                fs_label_flag=fs_label_flag,
-                fs_type=fs_type,
-            )
-            log.info("Created %s on %s", fs_type, part)
+            # This probably isn't necessary but it shouldn't hurt.
+            _BlockDevice.partprobe(self._device)
+
+            for tmp in _BlockDevice.get_partitions(self._device):
+                if tmp.get("fstype") is None:
+                    _FileSystem.create(
+                        devpath=tmp["path"],
+                        fs_type=fs_cfg["fs_type"],
+                        fs_args=fs_cfg.get("args"),
+                        fs_label=fs_cfg.get("label"),
+                        fs_label_flag=fs_cfg.get("label_flag", "-L"),
+                    )
+
+                    _FileSystem.mount(
+                        devpath=tmp["devpath"], mountpoint=fs_cfg["mountpoint"]
+                    )
+
+            self._partitions = _BlockDevice.get_partitions(self._device)
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
