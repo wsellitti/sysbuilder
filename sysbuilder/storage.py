@@ -466,12 +466,7 @@ class _LoopDevice:
     @staticmethod
     def list_associated(path: str) -> List[Dict[Any, Any]]:
         """
-        Find active virtual disk block devices using the disk image as
-        background storage.
-
-        Returns
-        =======
-        (list[dict]) Each dictionary describes a loop device.
+        Find active loop devices using the disk image as background storage.
         """
 
         devices = []
