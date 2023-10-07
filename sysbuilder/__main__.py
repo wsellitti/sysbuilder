@@ -12,7 +12,7 @@ def main():
 
     cfg = Config("config.json")
 
-    vdi = Storage(storage=cfg.get("Storage"))
+    vdi = Storage(storage=cfg.get("storage"))
     vdi.format()
 
 
