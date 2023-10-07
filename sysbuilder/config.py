@@ -117,12 +117,20 @@ class Config:
     -------
     """
 
-    def __init__(self, cfg: dict):
-        """Load configuration and validate."""
+    def __init__(self, cfg: dict, check: bool = True):
+        """
+        Load configuration and validate.
+
+        Params
+        ======
+        - cfg (dict): See class docstring.
+        - check (bool): If true run validation. Only useful in testing.
+        """
 
         self._cfg = cfg
 
-        self._validate()
+        if check:
+            self._validate()
 
     @classmethod
     def from_file(cls, cfg: str):
@@ -131,7 +139,7 @@ class Config:
         with open(
             cfg, mode="r", encoding="utf-8"
         ) as f:  # pylint: disable=C0103
-            return cls(json.load(f))
+            return cls(cfg=json.load(f), check=True)
 
     def _validate(self) -> None:
         """
