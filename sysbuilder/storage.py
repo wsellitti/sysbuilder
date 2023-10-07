@@ -487,7 +487,7 @@ class _LoopDevice:
             return []
 
         for line in losetup.split("\n"):
-            devpath = line.split(":")[0]
+            devpath = line.split(":")[0]  # /dev/loop0
             devices.append(_LoopDevice.list_one(devpath=devpath))
 
         return devices
