@@ -307,7 +307,7 @@ class _LoopDevice:
             raise LoopDeviceError(f"Cannot attach {path}") from losetup_err
 
     @staticmethod
-    def create(path: str, size: str = "32G") -> str:
+    def create_sparse(path: str, size: str = "32G") -> str:
         """
         Create a disk image file, activate it as a loop device, and return the
         path to the loop device.
@@ -442,8 +442,7 @@ class _LoopDevice:
 
 class BlockDevice:
     """
-    Block Device merges the _BlockDevice and _LoopDevice classes into an
-    object-oriented interface.
+    Block Device represents an actual block device in /dev.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -472,7 +471,7 @@ class BlockDevice:
     def as_image_file(cls, path: str, size: str = "32G"):
         """Create a block device from an image file."""
 
-        loopdev = _LoopDevice.create(path=path, size=size)
+        loopdev = _LoopDevice.create_sparse(path=path, size=size)
         blockdev = cls.from_device_path(devpath=loopdev)
 
         loop_attr = _LoopDevice.list_one(devpath=loopdev)
@@ -560,10 +559,10 @@ class Storage:
 
         self._cfg = storage
 
-        self._device = _LoopDevice.create(
+        self._device = BlockDevice.as_image_file(
             path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
-        log.info("Found device file: %s", self._device)
+        log.info("Found device file: %s", self._device.path)
 
         self._partitions = []
 
