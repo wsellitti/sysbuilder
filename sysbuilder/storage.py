@@ -424,7 +424,7 @@ class _LoopDevice:
                 check=True,
                 capture_output=True,
                 encoding="utf-8",
-            ).stdout
+            ).stdout.strip()
         except subprocess.CalledProcessError as losetup_err:
             raise LoopDeviceError(
                 "Cannot query loopback devices"
