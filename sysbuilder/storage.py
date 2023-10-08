@@ -1,4 +1,13 @@
-"""Manage storage devices."""
+"""
+Manage storage devices.
+
+*Nix-based and *Nix-like systems are not object-oriented as much as
+file-oriented. In an attempt to reduce the complexity of individual functions
+the protected classes in this module represent interactions with file and
+file-like objects through the host and various shell commands, organized into
+classes largely based on kind of file being manipulated. The public classes
+are object-oriented, and call the protected classes as needed.
+"""
 
 import json
 import logging
@@ -478,7 +487,8 @@ class _LoopDevice:
 
 class BlockDevice:
     """
-    Block Device.
+    Block Device merges the _BlockDevice and _LoopDevice classes into an
+    object-oriented interface.
     """
 
     def __init__(self, **kwargs) -> None:
