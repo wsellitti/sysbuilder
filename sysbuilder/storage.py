@@ -254,16 +254,19 @@ class _FileSystem:
         """
         Unmount a device.
 
+        Devices can have multiple mount points so we remove them all.
+
         Params
         ======
         - devpath (str): Device path.
         """
 
         # Make sure device isn't already mounted there.
-        mountpoints = _BlockDevice.list_one(devpath=devpath).get(
-            "mountpoints", []
-        )
+        loopdev = _BlockDevice.list_one(devpath=devpath)
+        mountpoints = loopdev.get("mountpoints", [])
         for existing_mount in mountpoints:
+            if existing_mount is None:
+                continue
             try:
                 subprocess.run(
                     ["unmount", existing_mount], check=True, capture_output=True
@@ -513,6 +516,14 @@ class BlockDevice:
     def path(self) -> str:
         """Return the device path."""
         return self._data["path"]
+
+    def unmount(self) -> str:
+        """Unmount child devices."""
+
+        for child in self._children:
+            child.unmount()
+
+        _FileSystem.unmount_all_mounts(devpath=self.path)
 
     def update(self, **kwargs) -> None:
         """
