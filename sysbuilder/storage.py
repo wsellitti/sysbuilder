@@ -19,23 +19,6 @@ class _BlockDevice:
     """Linux block device commands."""
 
     @staticmethod
-    def is_disk(devpath: str) -> bool:
-        """Return true if the block device a disk device."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "disk"
-
-    @staticmethod
-    def is_loop(devpath: str) -> bool:
-        """Return true if the block device a loop device."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "loop"
-
-    @staticmethod
-    def is_part(devpath: str) -> bool:
-        """Return true if the block device a disk partition."""
-        return _BlockDevice.list_one(devpath=devpath)["type"] == "part"
-
-    # Find block devices
-
-    @staticmethod
     def get_child_devices(devpath: str, depth: int = -1) -> List[str]:
         """
         Get's child devices.
