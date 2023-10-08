@@ -28,33 +28,63 @@ class _BlockDevice:
     """Linux block device commands."""
 
     @staticmethod
-    def get_child_devices(devpath: str, depth: int = -1) -> List[str]:
+    def create_partition(
+        devpath: str,
+        start_sector: str = "",
+        end_sector: str = "",
+        typecode: str = "ef00",
+    ) -> None:
         """
-        Get's child devices.
+        Partition a disk according to what's defined in the layout. Raises
+        BlockDeviceExistsError if the disk already has partitions.
 
         Params
         ======
-        - devpath: Device path.
-        - depth: How many layers of children to go to. Proving a negative
-          number means go forever.
-
-        Returns
-        =======
-        (list) Block device paths.
+        - devpath (list): The device path.
+        - start_sector (str): Sector where the partition should start. Values
+          can be absolute or positions measured in standard notation: "K",
+          "M", "G", "T". Providing and empty string "" will use the next
+          available starting sector. Values beginning with a "+" will start
+          the parittion that distance past the next available starting sector
+          (ie, "+2G" will cause the next partition to start 2 gibibytes after
+          the last partition ended). Values beginning with a "-"  will start
+          the partition that distance from the next available ending sector
+          with enough space (ie, "-2G" will create a partition that starts 2
+          gibibytes before the ending most available sector).
+        - end_sector (str): Sector where the partition should end. Values can
+          be absolute or positions measured in standard notation: "K", "M",
+          "G", "T". Providing and empty string "" will use the next available
+          ending sector from the starting sector. Values beginning with a "+"
+          will end the partition that distance past the starting sector (ie,
+          "+2G" will create a 2 gibibyte partition). Values beginning with a
+          "-" will end the partition that distance from the next available
+          ending sector (ie, "-2G" will create a partition that 2 gibibytes
+          short of the maximum space available for that partiton).
+        - typecode (str): A 4-digit hexadecimal value representing partition
+          type codes, as returned from `sgdisk -L`.
         """
 
-        block_dev = _BlockDevice.list_one(devpath=devpath)
-        children = []
-        if depth != 0:
-            for child in block_dev.get("children", []):
-                children.append(child["path"])
-                children.extend(
-                    _BlockDevice.get_child_devices(
-                        child["path"], depth=(depth - 1)
-                    )
-                )
+        old_partitions = _BlockDevice.partprobe(devpath)
 
-        return children
+        count = str(len(old_partitions))
+
+        try:
+            subprocess.run(
+                [
+                    "sgdisk",
+                    "--new",
+                    ":".join([count, str(start_sector), str(end_sector)]),
+                    "--typecode",
+                    ":".join([count, typecode]),
+                ],
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+        except subprocess.CalledProcessError as part_err:
+            raise BlockDeviceError(
+                f"Cannot create partition {count} on {devpath}!"
+            ) from part_err
 
     @staticmethod
     def list_all() -> List[Dict[Any, Any]]:
@@ -131,79 +161,6 @@ class _BlockDevice:
                     dev["back-file"] = f.read()
 
         return dev
-
-    # Manipulate block devices
-
-    @staticmethod
-    def create_partition(
-        devpath: str,
-        start_sector: str = "",
-        end_sector: str = "",
-        typecode: str = "ef00",
-    ) -> None:
-        """
-        Partition a disk according to what's defined in the layout. Raises
-        BlockDeviceExistsError if the disk already has partitions.
-
-        Params
-        ======
-        - devpath (list): The device path.
-        - start_sector (str): Sector where the partition should start. Values
-          can be absolute or positions measured in standard notation: "K",
-          "M", "G", "T". Providing and empty string "" will use the next
-          available starting sector. Values beginning with a "+" will start
-          the parittion that distance past the next available starting sector
-          (ie, "+2G" will cause the next partition to start 2 gibibytes after
-          the last partition ended). Values beginning with a "-"  will start
-          the partition that distance from the next available ending sector
-          with enough space (ie, "-2G" will create a partition that starts 2
-          gibibytes before the ending most available sector).
-        - end_sector (str): Sector where the partition should end. Values can
-          be absolute or positions measured in standard notation: "K", "M",
-          "G", "T". Providing and empty string "" will use the next available
-          ending sector from the starting sector. Values beginning with a "+"
-          will end the partition that distance past the starting sector (ie,
-          "+2G" will create a 2 gibibyte partition). Values beginning with a
-          "-" will end the partition that distance from the next available
-          ending sector (ie, "-2G" will create a partition that 2 gibibytes
-          short of the maximum space available for that partiton).
-        - typecode (str): A 4-digit hexadecimal value representing partition
-          type codes, as returned from `sgdisk -L`.
-        """
-
-        old_partitions = _BlockDevice.partprobe(devpath)
-
-        count = str(len(old_partitions))
-
-        try:
-            subprocess.run(
-                [
-                    "sgdisk",
-                    "--new",
-                    ":".join([count, str(start_sector), str(end_sector)]),
-                    "--typecode",
-                    ":".join([count, typecode]),
-                ],
-                check=True,
-                capture_output=True,
-                encoding="utf-8",
-            )
-        except subprocess.CalledProcessError as part_err:
-            raise BlockDeviceError(
-                f"Cannot create partition {count} on {devpath}!"
-            ) from part_err
-
-    @staticmethod
-    def get_partitions(devpath: str) -> List[str]:
-        """
-        Returns a list of partitions. Raises ValueError if `devpath` is not a
-        disk device
-        """
-
-        if _BlockDevice.is_disk(devpath=devpath):
-            raise ValueError(f"{devpath} is not a disk!")
-
-        return _BlockDevice.get_child_devices(devpath=devpath, depth=1)
 
     @staticmethod
     def partprobe(devpath: str) -> None:
@@ -350,6 +307,36 @@ class _LoopDevice:
             raise LoopDeviceError(f"Cannot attach {path}") from losetup_err
 
     @staticmethod
+    def create(path: str, size: str = "32G") -> str:
+        """
+        Create a disk image file, activate it as a loop device, and return the
+        path to the loop device.
+
+        Params
+        ======
+        - path (str): Path to an image file or device file.
+        - size (str): Size of image file. Only used if path points to a
+          nonexistant file. Defaults to "32G"
+
+        Returns
+        =======
+        (str) The path to the loop device.
+        """
+
+        devpath = os.path.abspath(path)
+
+        if os.path.exists(devpath):
+            raise FileExistsError(devpath)
+
+        subprocess.run(
+            ["truncate", "--size", size, devpath],
+            check=True,
+            capture_output=True,
+        )
+
+        return _LoopDevice.attach(devpath)
+
+    @staticmethod
     def detach(devpath: str) -> None:
         """Deactivates an active loop device."""
 
@@ -422,38 +409,6 @@ class _LoopDevice:
             raise LoopDeviceError(
                 "Cannot query loopback devices!"
             ) from json_err
-
-    # Virtual Disk Image Specific functions ---
-
-    @staticmethod
-    def create(path: str, size: str = "32G") -> str:
-        """
-        Create a disk image file, activate it as a loop device, and return the
-        path to the loop device.
-
-        Params
-        ======
-        - path (str): Path to an image file or device file.
-        - size (str): Size of image file. Only used if path points to a
-          nonexistant file. Defaults to "32G"
-
-        Returns
-        =======
-        (str) The path to the loop device.
-        """
-
-        devpath = os.path.abspath(path)
-
-        if os.path.exists(devpath):
-            raise FileExistsError(devpath)
-
-        subprocess.run(
-            ["truncate", "--size", size, devpath],
-            check=True,
-            capture_output=True,
-        )
-
-        return _LoopDevice.attach(devpath)
 
     @staticmethod
     def list_associated(path: str) -> List[Dict[Any, Any]]:
