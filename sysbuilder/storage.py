@@ -153,7 +153,7 @@ class _BlockDevice:
             if "back-file" not in dev:
                 with open(
                     os.path.join(
-                        ["/sys", "block", dev["name"], "loop", "backing_file"]
+                        "/sys", "block", dev["name"], "loop", "backing_file"
                     ),
                     mode="r",
                     encoding="utf-8",
