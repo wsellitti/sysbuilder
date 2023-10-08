@@ -379,11 +379,18 @@ class _LoopDevice:
             ) from losetup_err
 
         try:
-            return json.loads(losetup)["loopdevices"][0]
+            loopdevice = json.loads(losetup)["loopdevices"][0]
         except json.JSONDecodeError as json_err:
             raise LoopDeviceError(
                 f"Cannot query loopback device {devpath}!"
             ) from json_err
+
+        # Some keys have unnecessary whitespace in them.
+        for key, val in loopdevice.items():
+            if isinstance(val, str):
+                loopdevice[key] = val.strip()
+
+        return loopdevice
 
     @staticmethod
     def list_all() -> List[Dict[Any, Any]]:
@@ -404,11 +411,19 @@ class _LoopDevice:
             raise
 
         try:
-            return json.loads(losetup)["loopdevices"]
+            loopdevices = json.loads(losetup)["loopdevices"]
         except json.JSONDecodeError as json_err:
             raise LoopDeviceError(
                 "Cannot query loopback devices!"
             ) from json_err
+
+        # Some keys have unnecessary whitespace in them.
+        for loopdevice in loopdevices:
+            for key, val in loopdevice.items():
+                if isinstance(val, str):
+                    loopdevice[key] = val.strip()
+
+        return loopdevices
 
     @staticmethod
     def list_associated(path: str) -> List[Dict[Any, Any]]:
