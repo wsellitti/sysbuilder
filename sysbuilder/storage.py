@@ -496,8 +496,6 @@ class _LoopDevice:
 class BlockDevice:
     """
     Block Device.
-
-    Referring to this device as a string will return it's path.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -507,9 +505,6 @@ class BlockDevice:
         self._children = []
 
         self.update(**kwargs)
-
-    def __str__(self) -> str:
-        return self.path
 
     @classmethod
     def from_device_path(cls, devpath: str):
@@ -525,20 +520,72 @@ class BlockDevice:
         devs = _BlockDevice.list_all()
         return [cls(**dev) for dev in devs]
 
+    @classmethod
+    def as_image_file(cls, path: str, size: str = "32G"):
+        """Create a block device from an image file."""
+
+        loopdev = _LoopDevice.create(path=path, size=size)
+        blockdev = cls.from_device_path(devpath=loopdev)
+
+        loop_attr = _LoopDevice.list_one(devpath=loopdev)
+        blockdev.update(**loop_attr)
+
+        return blockdev
+
+    @property
+    def back_path(self) -> str:
+        """
+        Returns the backing file for loop devices and the device path for
+        physical devices.
+        """
+        if self.devtype == "loop":
+            return self._data["back-file"]
+        return self._data["path"]
+
+    @property
+    def devtype(self) -> str:
+        """Return device type."""
+        return self._data["type"]
+
     @property
     def path(self) -> str:
         """Return the device path."""
         return self._data["path"]
 
     def update(self, **kwargs) -> None:
-        """Updates device data."""
+        """
+        Updates device data.
 
-        if "path" in kwargs:
-            if "path" in self._data:
-                raise KeyError("Path already provided.")
-        else:
-            if "path" not in self._data:
-                raise KeyError("Path must be provided.")
+        The "path" and "maj:min" keys refer to properties block device in the
+        kernel and needs to be added to the BlockDevice object's _data
+        basically immediately. Those keys are also the few keys that can't
+        change, so `avoid_overwrite` is used to treat those keys like an XOR.
+        If a key is provided in self._data and kwargs and they aren't the same
+        value `avoid_overwrite` raises a `KeyError`. If it's provided in both
+        but they are the same value `avoid_overwrite` continues as normal. If
+        it's in neither `avoid_overwrite` raises a `KeyError`. If it's in one
+        or the other it will be either: left alone in _data or added to _data
+        as relevant.
+        """
+
+        def avoid_overwrite(key):
+            """
+            Certain keys cannot be allowed to change once written.
+            """
+
+            if key not in self._data and key not in kwargs:
+                raise KeyError(f"'{key}' must be provided.")
+
+            if (
+                key in self._data
+                and key in kwargs
+                and kwargs[key] != self._data[key]
+            ):
+                raise KeyError(f"'{key}' already provided.")
+
+        for key in kwargs:
+            if key in ["path", "maj:min"]:
+                avoid_overwrite(key)
 
         # Convert children dictionaries into BlockDevices.
         children = kwargs.pop("children", [])
