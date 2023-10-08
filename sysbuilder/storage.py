@@ -368,21 +368,21 @@ class _LoopDevice:
 
         try:
             losetup = subprocess.run(
-                ["losetup", "--json", "--output-all", devpath],
+                ["losetup", "--json", "--output-all", "--list", devpath],
                 check=True,
                 capture_output=True,
                 encoding="utf-8",
             ).stdout
         except subprocess.CalledProcessError as losetup_err:
             raise LoopDeviceError(
-                "Cannot query loopback devices!"
+                f"Cannot query loopback device {devpath}!"
             ) from losetup_err
 
         try:
             return json.loads(losetup)["loopdevices"][0]
         except json.JSONDecodeError as json_err:
             raise LoopDeviceError(
-                "Cannot query loopback devices!"
+                f"Cannot query loopback device {devpath}!"
             ) from json_err
 
     @staticmethod
