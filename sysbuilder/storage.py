@@ -517,6 +517,18 @@ class BlockDevice:
         """Return the device path."""
         return self._data["path"]
 
+    def probe(self) -> None:
+        """Probe for partitions."""
+
+        if self._data["type"] != "disk":
+            raise BlockDeviceRrror("Only disks may be probed for partitions.")
+
+        _BlockDevice.partprobe(self.path)
+
+        blockdev = _BlockDevice.list_one(self.path)
+
+        self.update(**blockdev)
+
     def unmount(self) -> str:
         """Unmount child devices."""
 
@@ -625,7 +637,7 @@ class Storage:
 
         for part in self._cfg["layout"]:
             _BlockDevice.create_partition(
-                devpath=self._device["path"],
+                devpath=self._device.path,
                 start_sector=part["start"],
                 end_sector=part["end"],
                 typecode=part["typecode"],
@@ -634,9 +646,9 @@ class Storage:
             fs_cfg = part["filesystem"]
 
             # This probably isn't necessary but it shouldn't hurt.
-            _BlockDevice.partprobe(self._device)
+            _BlockDevice.partprobe(self._device.path)
 
-            for tmp in _BlockDevice.get_partitions(self._device):
+            for tmp in BlockDevice._children:
                 if tmp.get("fstype") is None:
                     _FileSystem.create(
                         devpath=tmp["path"],

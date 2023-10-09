@@ -43,3 +43,24 @@ class SparseStorageTesting(unittest.TestCase):
 
         self.vdi = storage.Storage(storage=cfg.get("storage"))
         self.assertTrue(self.vdi._device.back_path == self.img_path)
+
+    def test_sparse_disk_partitioning(self):
+        """Check partitioning a disk."""
+
+        cfg = Config(
+            check=False,
+            cfg={
+                "storage": {
+                    "disk": {
+                        "path": self.img_path,
+                        "type": "sparse",
+                        "ptable": "gpt",
+                        "size": "32G",
+                    }
+                }
+            },
+        )
+
+        self.vdi = storage.Storage(storage=cfg.get("storage"))
+        self.vdi.format()
+        self.assertTrue(self.vdi._device.back_path == self.img_path)
