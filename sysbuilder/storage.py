@@ -105,27 +105,11 @@ class _BlockDevice:
             raise
 
         try:
-            block_devices = json.loads(lsblk)["blockdevices"]
+            return json.loads(lsblk)["blockdevices"]
         except json.JSONDecodeError as json_err:
             raise BlockDeviceError(
                 "Unable to retrieve block devices."
             ) from json_err
-
-        # For whatever reason this was removed in a recent version of lsblk
-        for dev in block_devices:
-            if dev["type"] == "loop":
-                if "back-file" in dev:
-                    continue
-                with open(
-                    os.path.join(
-                        ["/sys", "block", dev["name"], "loop", "backing_file"]
-                    ),
-                    mode="r",
-                    encoding="utf-8",
-                ) as f:  # pylint: disable=C0103
-                    dev["back-file"] = f.read()
-
-        return block_devices
 
     @staticmethod
     def list_one(devpath: str) -> Dict[Any, Any]:
@@ -144,23 +128,9 @@ class _BlockDevice:
             raise
 
         try:
-            dev = json.loads(lsblk)["blockdevices"][0]
+            return json.loads(lsblk)["blockdevices"][0]
         except json.JSONDecodeError as json_err:
             raise BlockDeviceError(f"Cannot find {devpath}") from json_err
-
-        # For whatever reason this was removed in a recent version of lsblk
-        if dev["type"] == "loop":
-            if "back-file" not in dev:
-                with open(
-                    os.path.join(
-                        "/sys", "block", dev["name"], "loop", "backing_file"
-                    ),
-                    mode="r",
-                    encoding="utf-8",
-                ) as f:  # pylint: disable=C0103
-                    dev["back-file"] = f.read()
-
-        return dev
 
     @staticmethod
     def partprobe(devpath: str) -> None:
@@ -471,6 +441,17 @@ class BlockDevice:
 
         self.update(**kwargs)
 
+    def __eq__(self, other) -> bool:
+        """Compare self to other."""
+
+        if not isinstance(other, BlockDevice):
+            return False
+
+        if other.back_path == self.back_path:
+            return True
+
+        return False
+
     @classmethod
     def from_device_path(cls, devpath: str):
         """JSON from lsblk becomes a BlockDevice."""
@@ -520,8 +501,8 @@ class BlockDevice:
     def probe(self) -> None:
         """Probe for partitions."""
 
-        if self._data["type"] != "disk":
-            raise BlockDeviceRrror("Only disks may be probed for partitions.")
+        if self.devtype != "disk":
+            raise BlockDeviceError("Only disks may be probed for partitions.")
 
         _BlockDevice.partprobe(self.path)
 
@@ -553,29 +534,31 @@ class BlockDevice:
         as relevant.
         """
 
-        def avoid_overwrite(key):
-            """
-            Certain keys cannot be allowed to change once written.
-            """
-
-            if key not in self._data and key not in kwargs:
-                raise KeyError(f"'{key}' must be provided.")
-
+        for key, value in kwargs.items():
             if (
-                key in self._data
-                and key in kwargs
-                and kwargs[key] != self._data[key]
+                key in ["path", "back-file", "maj:min", "type"]
+                and key in self._data
+                and value != self._data[key]
             ):
-                raise KeyError(f"'{key}' already provided.")
+                raise KeyError(
+                    f"Cannot update self with '{key}': {value} != {self._data[key]}."
+                )
 
-        for key in kwargs:
-            if key in ["path", "maj:min"]:
-                avoid_overwrite(key)
+        def update_children(obj, children) -> None:
+            """
+            Updates a child object in children, or appends a new child object.
+            """
+
+            for child in children:
+                if child.path == obj["path"]:
+                    child.update(**obj)
+                    return
+
+            children.append(BlockDevice(**obj))
 
         # Convert children dictionaries into BlockDevices.
-        children = kwargs.pop("children", [])
-        for child in children:
-            self._children.append(BlockDevice(**child))
+        for obj in kwargs.pop("children", []):
+            update_children(obj, self._children)
 
         self._data.update(kwargs)
 
