@@ -1,4 +1,4 @@
-A simple scrpt to practice my python while I automate image building for my
+A simple script to practice my python while I automate image building for my
 homelab.
 
 Development
