@@ -64,7 +64,8 @@ class _BlockDevice:
           type codes, as returned from `sgdisk -L`.
         """
 
-        old_partitions = _BlockDevice.partprobe(devpath)
+        _BlockDevice.partprobe(devpath)
+        old_partitions = _BlockDevice.list_one(devpath).get("children", [])
 
         count = str(len(old_partitions))
 
