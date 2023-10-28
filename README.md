@@ -1,8 +1,21 @@
 A simple script to practice my python while I automate image building for my
 homelab.
 
+
 Development
 ===========
+
+Features
+--------
+
+- [x] Read from a config file
+- [x] Create virtual storage file
+- [x] Activate virtual storage file as virtual disk
+- [ ] Install partitions to virtual disk
+- [ ] Install filesystems to partitions
+- [ ] Install os to filesystem
+    - [ ] customizable with packages
+    - [ ] customizable with extra files
 
 
 Testing
