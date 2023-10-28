@@ -586,22 +586,6 @@ class Storage:
         )
         log.info("Found device file: %s", self._device.path)
 
-        self._partitions = []
-
-    @property
-    def partitions(self):
-        """Returns the results of partprobe."""
-
-        if self._partitions:
-            return self._partitions
-
-        # Might as well update if we have partitions on this image.
-        partitions = _BlockDevice.partprobe(self._device)
-        if partitions:
-            self._partitions = partitions
-
-        return self._partitions
-
     def format(self) -> None:
         """
         Install partitions and filesystems on empty disks.
@@ -645,8 +629,6 @@ class Storage:
                     _FileSystem.mount(
                         devpath=tmp["devpath"], mountpoint=fs_cfg["mountpoint"]
                     )
-
-            self._partitions = _BlockDevice.get_partitions(self._device)
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
