@@ -36,7 +36,7 @@ class _BlockDevice:
     ) -> None:
         """
         Partition a disk according to what's defined in the layout. Raises
-        BlockDeviceExistsError if the disk already has partitions.
+        BlockDeviceError if it cannot create a partition.
 
         Params
         ======
@@ -65,26 +65,30 @@ class _BlockDevice:
         """
 
         _BlockDevice.partprobe(devpath)
-        old_partitions = _BlockDevice.list_one(devpath).get("children", [])
+        dev = _BlockDevice.list_one(devpath)
+        old_partitions = dev.get("children", [])
 
-        count = str(len(old_partitions))
+        count = len(old_partitions)
+        new_part_num = str(count + 1)
 
         try:
             subprocess.run(
                 [
                     "sgdisk",
                     "--new",
-                    ":".join([count, str(start_sector), str(end_sector)]),
+                    ":".join(
+                        [new_part_num, str(start_sector), str(end_sector)]
+                    ),
                     "--typecode",
-                    ":".join([count, typecode]),
+                    ":".join([new_part_num, typecode]),
+                    devpath,
                 ],
                 check=True,
                 capture_output=True,
-                encoding="utf-8",
             )
         except subprocess.CalledProcessError as part_err:
             raise BlockDeviceError(
-                f"Cannot create partition {count} on {devpath}!"
+                f"Cannot create partition {new_part_num} on {devpath}!"
             ) from part_err
 
     @staticmethod
