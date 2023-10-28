@@ -616,7 +616,7 @@ class Storage:
             # This probably isn't necessary but it shouldn't hurt.
             _BlockDevice.partprobe(self._device.path)
 
-            for tmp in BlockDevice._children:
+            for tmp in self._device._children:  # pylint: disable=W0212
                 if tmp.get("fstype") is None:
                     _FileSystem.create(
                         devpath=tmp["path"],
