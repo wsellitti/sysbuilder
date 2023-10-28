@@ -48,11 +48,10 @@ class Config:
           device.
 
           'sparse' or 'raw'
-          : The value in `path` will be assumed to be a
-          virtual device. 'sparse' virtual devices will be created as a sparse
-          files and will only allocate data as they're used, while 'raw'
-          devices will be created using `dd` and will consume all of their
-          intended storage at one time.
+          : The value in `path` will be assumed to be a virtual device.
+          'sparse' virtual devices will be created as a sparse files and will
+          only allocate data as they're used, while 'raw' devices will
+          allocate all of their intended storage at one time.
 
         - ptable (str): The partition table type, only supports 'gpt' at this
           time. A `ptable` value of 'gpt' will case sysbuilder to use `sgdisk`
