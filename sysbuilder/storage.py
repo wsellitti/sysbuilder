@@ -285,7 +285,7 @@ class _LoopDevice:
             raise LoopDeviceError(f"Cannot attach {path}") from losetup_err
 
     @staticmethod
-    def create_sparse(path: str, size: str = "32G") -> str:
+    def create_sparse(path: str, size: int = 32768) -> str:
         """
         Create a disk image file, activate it as a loop device, and return the
         path to the loop device.
@@ -293,8 +293,8 @@ class _LoopDevice:
         Params
         ======
         - path (str): Path to an image file or device file.
-        - size (str): Size of image file. Only used if path points to a
-          nonexistant file. Defaults to "32G"
+        - size (int): Size of image file, in mebibytes. Only used if path
+          points to a nonexistant file.
 
         Returns
         =======
@@ -307,7 +307,15 @@ class _LoopDevice:
             raise FileExistsError(devpath)
 
         subprocess.run(
-            ["truncate", "--size", size, devpath],
+            [
+                "sudo",
+                "dd",
+                "if=/dev/zero",
+                f"of={devpath}",
+                "bs=1M",
+                f"count={size}",
+                "conv=sparse",
+            ],
             check=True,
             capture_output=True,
         )
@@ -475,7 +483,16 @@ class BlockDevice:
     def as_image_file(cls, path: str, size: str = "32G"):
         """Create a block device from an image file."""
 
-        loopdev = _LoopDevice.create_sparse(path=path, size=size)
+        if size.endswith("M") or size.endswith("m"):
+            msize = int(size[:-1])
+        elif size.endswith("G") or size.endswith("g"):
+            msize = int(size[:-1]) * 1024
+        elif size.endswith("T") or size.endswith("t"):
+            msize = int(size[:-1]) * 1024 * 1024
+        elif size.endswith("P") or size.endswith("p"):
+            msize = int(size[:-1]) * 1024 * 1024 * 1024
+
+        loopdev = _LoopDevice.create_sparse(path=path, size=msize)
         blockdev = cls.from_device_path(devpath=loopdev)
 
         loop_attr = _LoopDevice.list_one(devpath=loopdev)

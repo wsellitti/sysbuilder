@@ -28,7 +28,7 @@ validate_json = {
                         },
                         "size": {
                             "type": "string",
-                            "pattern": "[0-9]+([KMGTP]|$)",
+                            "pattern": "[0-9]+[MGTP]",
                         },
                     },
                     "required": [

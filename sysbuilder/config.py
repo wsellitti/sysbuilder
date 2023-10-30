@@ -57,9 +57,9 @@ class Config:
           time. A `ptable` value of 'gpt' will case sysbuilder to use `sgdisk`
           to partition the disk.
 
-        - size (str|int): This should be either and int, as total number of
-          bytes, or a string shortened according to standard notation: '32G',
-          '234M', '1K'. These values are in powers of 1024 not 1000.
+        - size (str): This should be a string shortened according to standard
+          notation: '32G', '234M', '1T'. These values are in powers of 1024 not
+          1000.
 
     - layout (list): Describes the partition layout on the storage device, as
       well as filesystems on those partitions. Each item in `layout` must
