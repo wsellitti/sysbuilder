@@ -641,7 +641,7 @@ class Storage:
             fs_cfg = part["filesystem"]
 
             # This probably isn't necessary but it shouldn't hurt.
-            _BlockDevice.partprobe(self._device.path)
+            self._device.probe()
 
             for tmp in self._device._children:  # pylint: disable=W0212
                 if tmp.get("fstype") is None:
