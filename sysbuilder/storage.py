@@ -519,6 +519,13 @@ class BlockDevice:
         """Return the device path."""
         return self._data["path"]
 
+    def get(self, val, default=None) -> Any:
+        """
+        Return the value `val` from `self._data`, or the default value
+        `default` if `val` is not present.
+        """
+        return self._data.get(val, default)
+
     def probe(self) -> None:
         """Probe for partitions."""
 
