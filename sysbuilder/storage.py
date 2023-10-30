@@ -522,7 +522,7 @@ class BlockDevice:
     def probe(self) -> None:
         """Probe for partitions."""
 
-        if self.devtype != "disk":
+        if self.devtype not in ["disk", "loop"]:
             raise BlockDeviceError("Only disks may be probed for partitions.")
 
         _BlockDevice.partprobe(self.path)
