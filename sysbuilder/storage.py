@@ -308,7 +308,6 @@ class _LoopDevice:
 
         subprocess.run(
             [
-                "sudo",
                 "dd",
                 "if=/dev/zero",
                 f"of={devpath}",
