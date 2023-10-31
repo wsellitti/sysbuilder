@@ -564,7 +564,7 @@ class BlockDevice:
 
         for key, value in kwargs.items():
             if (
-                key in ["path", "back-file", "maj:min", "type"]
+                key in ["path", "back-file", "type"]
                 and key in self._data
                 and value != self._data[key]
             ):
