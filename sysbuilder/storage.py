@@ -646,8 +646,8 @@ class Storage:
             for tmp in self._device._children:  # pylint: disable=W0212
                 if tmp.get("fstype") is None:
                     _FileSystem.create(
-                        devpath=tmp.get("path"),
-                        fs_type=fs_cfg["fs_type"],
+                        devpath=tmp.path,
+                        fs_type=fs_cfg["type"],
                         fs_args=fs_cfg.get("args"),
                         fs_label=fs_cfg.get("label"),
                         fs_label_flag=fs_cfg.get("label_flag", "-L"),
