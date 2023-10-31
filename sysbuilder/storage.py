@@ -550,16 +550,16 @@ class BlockDevice:
         """
         Updates device data.
 
-        The "path" and "maj:min" keys refer to properties block device in the
-        kernel and needs to be added to the BlockDevice object's _data
-        basically immediately. Those keys are also the few keys that can't
-        change, so `avoid_overwrite` is used to treat those keys like an XOR.
-        If a key is provided in self._data and kwargs and they aren't the same
-        value `avoid_overwrite` raises a `KeyError`. If it's provided in both
-        but they are the same value `avoid_overwrite` continues as normal. If
-        it's in neither `avoid_overwrite` raises a `KeyError`. If it's in one
-        or the other it will be either: left alone in _data or added to _data
-        as relevant.
+        The "path" and keys refer to properties block device in the kernel and
+        needs to be added to the BlockDevice object's _data basically
+        immediately. Those keys are also the few keys that can't change, so
+        `avoid_overwrite` is used to treat those keys like an XOR. If a key is
+        provided in self._data and kwargs and they aren't the same value
+        `avoid_overwrite` raises a `KeyError`. If it's provided in both but
+        they are the same value `avoid_overwrite` continues as normal. If it's
+        in neither `avoid_overwrite` raises a `KeyError`. If it's in one or
+        the other it will be either: left alone in _data or added to _data as
+        relevant.
         """
 
         for key, value in kwargs.items():
@@ -572,7 +572,7 @@ class BlockDevice:
                     f"Cannot update self with '{key}': {value} != {self._data[key]}."
                 )
 
-        def update_children(obj, children) -> None:
+        def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
             Updates a child object in children, or appends a new child object.
             """
