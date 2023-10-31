@@ -2,6 +2,7 @@
 
 # pylint: disable=W0212,W0201
 
+import os
 import tempfile
 import unittest
 from sysbuilder.config import Config
