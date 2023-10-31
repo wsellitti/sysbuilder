@@ -653,9 +653,5 @@ class Storage:
                         fs_label_flag=fs_cfg.get("label_flag", "-L"),
                     )
 
-                    _FileSystem.mount(
-                        devpath=tmp["devpath"], mountpoint=fs_cfg["mountpoint"]
-                    )
-
     def mount(self) -> None:
         """Mount filesystems per configuration."""
