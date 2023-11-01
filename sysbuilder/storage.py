@@ -546,6 +546,14 @@ class BlockDevice:
         blockdev = _BlockDevice.list_one(self.path)
         self.update(**blockdev)
 
+    def unmount(self) -> None:
+        """Unmount child devices."""
+
+        for child in self._children:
+            child.unmount()
+
+        _FileSystem.unmount_all_mounts(devpath=self.path)
+
     def update(self, **kwargs) -> None:
         """
         Updates device data.
