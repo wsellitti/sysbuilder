@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 from typing import List, Dict, Any
 from sysbuilder.exceptions import (
     BlockDeviceNotFoundError,
@@ -151,6 +152,9 @@ class _BlockDevice:
             raise BlockDeviceError(
                 f"Unable to probe {devpath} for partitions."
             ) from probe_err
+
+        log.debug("Wait for a second while the kernel finishes updating /sys.")
+        time.sleep(1)
 
 
 class _FileSystem:
