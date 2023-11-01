@@ -529,7 +529,7 @@ class BlockDevice:
         fs_label: str | None = None,
         fs_label_flag: str = "-L",
         fs_args: list | None = None,
-    ):
+    ) -> None:
         """
         Format partitions
         """
