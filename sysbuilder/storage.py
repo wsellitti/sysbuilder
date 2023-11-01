@@ -523,6 +523,77 @@ class BlockDevice:
         """Return the device path."""
         return self._data["path"]
 
+    def add_filesystem(
+        self,
+        fs_type: str,
+        fs_label: str | None = None,
+        fs_label_flag: str = "-L",
+        fs_args: list | None = None,
+    ):
+        """
+        Format partitions
+        """
+
+        self.sync()
+
+        if self.get("fstype") is not None:
+            raise BlockDeviceError(
+                f"Cannot format a formatted block device: {self.path}."
+            )
+
+        _FileSystem.create(
+            devpath=self.path,
+            fs_type=fs_type,
+            fs_args=fs_args,
+            fs_label=fs_label,
+            fs_label_flag=fs_label_flag,
+        )
+
+        self.sync()
+
+    def add_part(self, start, end, typecode) -> None:
+        """
+        Add partitions to a disk.
+
+        Params
+        ======
+        - start (str): Sector where the partition should start. Values can be
+          absolute or positions measured in standard notation: "K", "M", "G",
+          "T". Providing and empty string "" will use the next available
+          starting sector. Values beginning with a "+" will start the
+          parittion that distance past the next available starting sector (ie,
+          "+2G" will cause the next partition to start 2 gibibytes after the
+          last partition ended). Values beginning with a "-"  will start the
+          partition that distance from the next available ending sector with
+          enough space (ie, "-2G" will create a partition that starts 2
+          gibibytes before the ending most available sector).
+        - end (str): Sector where the partition should end. Values can be
+          absolute or positions measured in standard notation: "K", "M", "G",
+          "T". Providing and empty string "" will use the next available
+          ending sector from the starting sector. Values beginning with a "+"
+          will end the partition that distance past the starting sector (ie,
+          "+2G" will create a 2 gibibyte partition). Values beginning with a
+          "-" will end the partition that distance from the next available
+          ending sector (ie, "-2G" will create a partition that 2 gibibytes
+          short of the maximum space available for that partiton).
+        - typecode (str): A 4-digit hexadecimal value representing partition
+          type codes, as returned from `sgdisk -L`.
+        """
+
+        self.sync()
+
+        if self.devtype not in ["disk", "loop"]:
+            raise BlockDeviceError("Only disks may be partitioned.")
+
+        _BlockDevice.create_partition(
+            devpath=self.path,
+            start_sector=start,
+            end_sector=end,
+            typecode=typecode,
+        )
+
+        self.sync()
+
     def get(self, val, default=None) -> Any:
         """
         Return the value `val` from `self._data`, or the default value
@@ -639,30 +710,19 @@ class Storage:
         """
 
         for part in self._cfg["layout"]:
-            _BlockDevice.create_partition(
-                devpath=self._device.path,
-                start_sector=part["start"],
-                end_sector=part["end"],
-                typecode=part["typecode"],
+            self._device.add_part(
+                start=part["start"], end=part["end"], typecode=part["typecode"]
             )
 
             fs_cfg = part["filesystem"]
 
-            # This probably isn't necessary but it shouldn't hurt.
-            self._device.sync()
-
             for child in self._device._children:  # pylint: disable=W0212
-                if child.get("fstype") is None:
-                    _FileSystem.create(
-                        devpath=child.path,
-                        fs_type=fs_cfg["type"],
-                        fs_args=fs_cfg.get("args"),
-                        fs_label=fs_cfg.get("label"),
-                        fs_label_flag=fs_cfg.get("label_flag", "-L"),
-                    )
-
-        # Final sync of device status
-        self._device.sync()
+                child.add_filesystem(
+                    fs_type=fs_cfg["type"],
+                    fs_args=fs_cfg.get("args"),
+                    fs_label=fs_cfg.get("label"),
+                    fs_label_flag=fs_cfg.get("label_flag", "-L"),
+                )
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
