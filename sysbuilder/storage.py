@@ -538,17 +538,13 @@ class BlockDevice:
 
         _BlockDevice.partprobe(self.path)
 
+        self.sync()
+
+    def sync(self) -> None:
+        """Update self with current data."""
+
         blockdev = _BlockDevice.list_one(self.path)
-
         self.update(**blockdev)
-
-    def unmount(self) -> str:
-        """Unmount child devices."""
-
-        for child in self._children:
-            child.unmount()
-
-        _FileSystem.unmount_all_mounts(devpath=self.path)
 
     def update(self, **kwargs) -> None:
         """
@@ -645,7 +641,7 @@ class Storage:
             fs_cfg = part["filesystem"]
 
             # This probably isn't necessary but it shouldn't hurt.
-            self._device.probe()
+            self._device.sync()
 
             for child in self._device._children:  # pylint: disable=W0212
                 if child.get("fstype") is None:
@@ -656,6 +652,9 @@ class Storage:
                         fs_label=fs_cfg.get("label"),
                         fs_label_flag=fs_cfg.get("label_flag", "-L"),
                     )
+
+        # Final sync of device status
+        self._device.sync()
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
