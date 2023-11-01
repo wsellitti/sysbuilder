@@ -104,9 +104,10 @@ class SparseStorageTesting(unittest.TestCase):
         self.vdi = storage.Storage(storage=cfg.get("storage"))
         self.vdi.format()
 
-        print(self.vdi._device._data)
-
         # There need to be as many partitions as were described in the configuration.
         self.assertEqual(
             len(self.vdi._device._children), len(cfg.get("storage")["layout"])
         )
+
+        fstypes = [c.get("fstype") for c in self.vdi._device._children]
+        self.assertEqual(fstypes, ["vfat", "swap", "ext4"])
