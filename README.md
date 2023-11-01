@@ -17,6 +17,11 @@ Features
     - [ ] customizable with packages
     - [ ] customizable with extra files
 
+To Do
+-----
+- [ ] Split "shell commands" into their own module
+- [ ] Split "shell commands" into their own classes
+
 
 Testing
 =======
