@@ -643,10 +643,10 @@ class Storage:
             # This probably isn't necessary but it shouldn't hurt.
             self._device.probe()
 
-            for tmp in self._device._children:  # pylint: disable=W0212
-                if tmp.get("fstype") is None:
+            for child in self._device._children:  # pylint: disable=W0212
+                if child.get("fstype") is None:
                     _FileSystem.create(
-                        devpath=tmp.path,
+                        devpath=child.path,
                         fs_type=fs_cfg["type"],
                         fs_args=fs_cfg.get("args"),
                         fs_label=fs_cfg.get("label"),
