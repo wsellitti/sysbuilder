@@ -96,6 +96,9 @@ class _BlockDevice:
     def list_all() -> List[Dict[Any, Any]]:
         """List all block devices."""
 
+        log.debug("Wait for a thousandth of a second before running lsblk.")
+        time.sleep(0.001)
+
         try:
             lsblk = subprocess.run(
                 ["lsblk", "--output-all", "--json"],
@@ -120,6 +123,9 @@ class _BlockDevice:
     @staticmethod
     def list_one(devpath: str) -> Dict[Any, Any]:
         """List one block device."""
+
+        log.debug("Wait for a thousandth of a second before running lsblk.")
+        time.sleep(0.001)
 
         try:
             lsblk = subprocess.run(
@@ -152,9 +158,6 @@ class _BlockDevice:
             raise BlockDeviceError(
                 f"Unable to probe {devpath} for partitions."
             ) from probe_err
-
-        log.debug("Wait for a second while the kernel finishes updating /sys.")
-        time.sleep(1)
 
 
 class _FileSystem:
