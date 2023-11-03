@@ -644,16 +644,6 @@ class BlockDevice:
         relevant.
         """
 
-        for key, value in kwargs.items():
-            if (
-                key in ["path", "back-file", "type"]
-                and key in self._data
-                and value != self._data[key]
-            ):
-                raise KeyError(
-                    f"Cannot update self with '{key}': {value} != {self._data[key]}."
-                )
-
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
             Updates a child object in children, or appends a new child object.
@@ -666,9 +656,20 @@ class BlockDevice:
 
             children.append(BlockDevice(**obj))
 
+        for key, value in kwargs.items():
+            if (
+                key in ["path", "back-file", "type"]
+                and key in self._data
+                and value != self._data[key]
+            ):
+                raise KeyError(
+                    f"Cannot update self with '{key}': {value} != {self._data[key]}."
+                )
+
         # Convert children dictionaries into BlockDevices.
-        for obj in kwargs.pop("children", []):
-            update_children(obj, self._children)
+        children = kwargs.pop("children", [])
+        for child in children:
+            update_children(child, self._children)
 
         self._data.update(kwargs)
 
