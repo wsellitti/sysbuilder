@@ -721,12 +721,13 @@ class Storage:
             fs_cfg = part["filesystem"]
 
             for child in self._device._children:  # pylint: disable=W0212
-                child.add_filesystem(
-                    fs_type=fs_cfg["type"],
-                    fs_args=fs_cfg.get("args"),
-                    fs_label=fs_cfg.get("label"),
-                    fs_label_flag=fs_cfg.get("label_flag", "-L"),
-                )
+                if child.get("fstype") is None:
+                    child.add_filesystem(
+                        fs_type=fs_cfg["type"],
+                        fs_args=fs_cfg.get("args"),
+                        fs_label=fs_cfg.get("label"),
+                        fs_label_flag=fs_cfg.get("label_flag", "-L"),
+                    )
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
