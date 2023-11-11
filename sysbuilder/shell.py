@@ -6,7 +6,7 @@ import os
 import stat
 import subprocess
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +73,53 @@ def lsblk(*args) -> Dict[Any, Any]:
     )
 
     return json.loads(result.stdout)["blockdevices"]
+
+
+def losetup(fp: str, command: Literal["attach", "detach"]) -> None:
+    """
+    Wraps losetup.
+
+    # Params
+
+      - fp (str): The filepath to the blockdevice or backing file. If fp is a
+        loop block device the losetup function will attempt to deactivate,
+        otherwise the losetup function will attempt to activate as a loop
+        device.
+      - command (str): Must be one of:
+          - attach: Adds a file as a loop device if it's not one already. Does
+            nothing otherwise.
+          - detach: Removes the file from being a loop device if it is one.
+            Does nothing otherwise.
+
+    **THERE IS NO WAY FOR LOSETUP TO DISTINGUISH A FILE THAT SHOULD NOT BE A
+    LOOPDEVICE FROM ONE THAT SHOULD. THIS ACTION IS POTENTIALLY DESTRUCTIVE.**
+    """
+
+    fp = os.path.abspath(fp)
+
+    if command == "attach":
+        if stat.S_ISBLK(os.stat(fp).st_mode) > 0:
+            raise ValueError(f"{fp} is a device file already.")
+
+    if command == "detach":
+        if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
+            raise ValueError(f"{fp} is not a device file.")
+
+    args = {
+        "attach": [
+            "--show",
+            "--find",
+            "--nooverlap",
+            "--partscan",
+        ],
+        "detach": ["--detach"],
+    }
+
+    command = ["sudo", "losetup"]
+    command.extend(args[command])
+    command.append(fp)
+
+    subprocess.run(command, check=True, capture_output=True, encoding="utf-8")
 
 
 def partprobe(*args):
