@@ -92,14 +92,14 @@ def sgdisk(devpath: str, layout: Dict[str, Any]) -> None:
     """
     sgdisk wrapper
 
-    Params
-    ======
-      - devpath (str):
-      - layout (list): How the partitions should be laid out on the
-        disk provided by `devpath`. Each item represents a different partition.
+    # Params
 
-    Layout
-    ------
+      - devpath (str): Path to the device.
+      - layout (list): How the partitions should be laid out on the disk
+        provided by `devpath`. Each item represents a different partition.
+
+    ## Layout
+
     Each object provided by `layout` must contain at least one of the
     following sets of keys (the name of the set is not a value that needs to
     be provided, the type will be determined based on the keys in the

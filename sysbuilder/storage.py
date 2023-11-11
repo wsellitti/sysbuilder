@@ -39,8 +39,8 @@ class _BlockDevice:
         Partition a disk according to what's defined in the layout. Raises
         BlockDeviceError if it cannot create a partition.
 
-        Params
-        ======
+        # Params
+
         - devpath (list): The device path.
         - start_sector (str): Sector where the partition should start. Values
           can be absolute or positions measured in standard notation: "K",
@@ -202,8 +202,8 @@ class _FileSystem:
         """
         Mount device on mountpoint, creating mountpoint if it does not exist.
 
-        Params
-        ======
+        # Params
+
         - devpath (str): Path to device file in /dev.
         - mountpoint (str): Mountpoint on host filesystem.
         """
@@ -558,8 +558,8 @@ class BlockDevice:
         """
         Add partitions to a disk.
 
-        Params
-        ======
+        # Params
+
         - start (str): Sector where the partition should start. Values can be
           absolute or positions measured in standard notation: "K", "M", "G",
           "T". Providing and empty string "" will use the next available
@@ -683,8 +683,8 @@ class Storage:
         """
         Storage object.
 
-        Params
-        ======
+        # Params
+
         - storage (dict): A dictionary representing a device and it's partition
           layout.
         """
