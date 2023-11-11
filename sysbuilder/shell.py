@@ -11,39 +11,67 @@ from typing import Any, Dict, List, Literal
 log = logging.getLogger(__name__)
 
 
-def dd(
-    output_file: str,
-    count: int,
-    bs: str = "1M",
-    convs: List[str] | None = None,
-    input_file: str = "/dev/zero",
-) -> None:
-    """
-    dd wrapper
+class _Shell:
+    """Generic _Shell class."""
 
-    Parameters are mostly based off of defined dd parameters.
-    """
+    @staticmethod
+    def command(func) -> Any:
+        """
+        Run test
 
-    output_file = os.path.abspath(output_file)
+        # Params
+          - args (list): Arguments for the provided function.
+          - kwargs (dict): Keyword arguments for the provided function.
 
-    if os.path.exists(output_file):
-        raise FileExistsError(output_file)
+        """
 
-    command = [
-        "dd",
-        f"if={input_file}",
-        f"of={output_file}",
-        f"bs={bs}",
-        f"count={count}",
-    ]
+        def inner(*args, **kwargs):
+            log.debug(func.__name__)
+            return func(*args, **kwargs)
 
-    if convs is not None:
-        conversions = ",".join(convs)
-        command.append(f"conv={conversions}")
+        return inner
 
-    log.debug(command)
 
-    subprocess.run(command, capture_output=True, check=True, encoding="utf-8")
+class DD(_Shell):
+    """Wraps `dd` shell command."""
+
+    @_Shell.command
+    def run(
+        self,
+        output_file: str,
+        count: int,
+        bs: str = "1M",
+        convs: List[str] | None = None,
+        input_file: str = "/dev/zero",
+    ) -> None:
+        """
+        dd wrapper
+
+        Parameters are mostly based off of defined dd parameters.
+        """
+
+        output_file = os.path.abspath(output_file)
+
+        if os.path.exists(output_file):
+            raise FileExistsError(output_file)
+
+        command = [
+            "dd",
+            f"if={input_file}",
+            f"of={output_file}",
+            f"bs={bs}",
+            f"count={count}",
+        ]
+
+        if convs is not None:
+            conversions = ",".join(convs)
+            command.append(f"conv={conversions}")
+
+        log.debug(command)
+
+        subprocess.run(
+            command, capture_output=True, check=True, encoding="utf-8"
+        )
 
 
 def lsblk(*args) -> Dict[Any, Any]:
