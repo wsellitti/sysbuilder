@@ -74,33 +74,32 @@ class DD(_Shell):
         )
 
 
-def lsblk(*args) -> Dict[Any, Any]:
-    """
-    lsblk wrapper
+class Lsblk(_Shell):
+    """Wrapps `lsblk` shell command."""
 
-    args: Active block device files.
-    """
+    @_Shell.command
+    def run(self, *args) -> List[Dict[Any, Any]]:
+        """
+        lsblk wrapper
 
-    log.debug("Wait for a thousandth of a second before running lsblk.")
-    time.sleep(0.001)
+        args: Active block device files.
+        """
 
-    for dev in args:
-        if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
-            raise ValueError(f"{dev} is not a device file.")
+        for dev in args:
+            if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
+                raise ValueError(f"{dev} is not a device file.")
 
-    command = ["lsblk", "--output-all", "--json"]
-    command.extend(args)
+        command = ["lsblk", "--output-all", "--json"]
+        command.extend(args)
 
-    log.debug(command)
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
+        )
 
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        check=True,
-        encoding="utf-8",
-    )
-
-    return json.loads(result.stdout)["blockdevices"]
+        return json.loads(result.stdout)["blockdevices"]
 
 
 def losetup(fp: str, command: Literal["attach", "detach"]) -> None:
