@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 from jsonschema import validate
-from sysbuilder.shell import dd, lsblk
+from sysbuilder.shell import DD, Lsblk, losetup
 from tests.data.lsblk_validate import validate_json
 
 
@@ -26,7 +26,8 @@ class ddTest(unittest.TestCase):
     def test_dd_sparse(self):
         """Test sparse file creation."""
 
-        dd(self.file, count="2048", convs=["sparse"])
+        dd = DD()
+        dd.run(self.file, count="2048", convs=["sparse"])
 
         blocks_utilized = os.stat(self.file).st_blocks
 
@@ -35,7 +36,8 @@ class ddTest(unittest.TestCase):
     def test_dd(self):
         """Test sparse file creation."""
 
-        dd(self.file, count="2048")
+        dd = DD()
+        dd.run(self.file, count="2048")
 
         blocks_utilized = os.stat(self.file).st_blocks
 
@@ -55,18 +57,21 @@ class lsblkTest(unittest.TestCase):
 
     def test_lsblk_all(self):
         """lsblk with no arguments"""
-        results = lsblk()
+        lsblk = Lsblk()
+        results = lsblk.run()
         self._lsblk_recurse(results)
 
     def test_lsblk_sda(self):
         """lsblk with one device argument"""
-        results = lsblk("/dev/sda")
+        lsblk = Lsblk()
+        results = lsblk.run("/dev/sda")
         self._lsblk_recurse(results)
 
     def test_lsblk_fail(self):
         """lsblk with one nondevice argument"""
         with self.assertRaises(ValueError):
-            lsblk("/bin/ls")
+            lsblk = Lsblk()
+            lsblk.run("/bin/ls")
 
 
 class partprobeTest(unittest.TestCase):
