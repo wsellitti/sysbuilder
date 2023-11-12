@@ -4,6 +4,7 @@
 
 import os
 import stat
+from subprocess import CalledProcessError
 import tempfile
 import unittest
 from jsonschema import validate
@@ -71,8 +72,8 @@ class losetupTest(unittest.TestCase):
         self.assertTrue(stat.S_ISBLK(os.stat(dev).st_mode))
 
         losetup.run(dev, test="detach")
-        self.assertFalse(os.path.exists(dev))
-        self.assertFalse(stat.S_ISBLK(os.stat(dev).st_mode))
+        with self.assertRaises(CalledProcessError):
+            Lsblk().run("/dev/loop0")  # The files still exist but lsblk fails.
 
 
 class lsblkTest(unittest.TestCase):
