@@ -3,10 +3,11 @@
 # pylint: disable=C0103
 
 import os
+import stat
 import tempfile
 import unittest
 from jsonschema import validate
-from sysbuilder.shell import DD, Lsblk, losetup
+from sysbuilder.shell import DD, Losetup, Lsblk
 from tests.data.lsblk_validate import validate_json
 
 
@@ -42,6 +43,36 @@ class ddTest(unittest.TestCase):
         blocks_utilized = os.stat(self.file).st_blocks
 
         self.assertEqual(blocks_utilized * 512, 2147483648)
+
+
+class losetupTest(unittest.TestCase):
+    """Test instances of losetup command."""
+
+    def setUp(self):
+        """Test file."""
+
+        self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
+        dd = DD()
+        dd.run(self.file, count="2048", convs=["sparse"])
+
+    def tearDown(self):
+        """Clean up"""
+
+        os.remove(self.file)
+        os.removedirs(os.path.dirname(self.file))
+
+    def test_losetup(self):
+        """Test losetup attach and detach"""
+
+        losetup = Losetup()
+        losetup.run(self.file, test="attach")
+
+        dev = "/dev/loop0"
+        self.assertTrue(stat.S_ISBLK(os.stat(dev).st_mode))
+
+        losetup.run(dev, test="detach")
+        self.assertFalse(os.path.exists(dev))
+        self.assertFalse(stat.S_ISBLK(os.stat(dev).st_mode))
 
 
 class lsblkTest(unittest.TestCase):
