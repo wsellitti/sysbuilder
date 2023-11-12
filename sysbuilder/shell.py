@@ -155,17 +155,21 @@ class Lsblk(_Shell):
         return json.loads(result.stdout)["blockdevices"]
 
 
-def partprobe(*args):
-    """partprobe wrapper"""
+class PartProbe(_Shell):
+    """Wraps `partprobe` shell command."""
 
-    for dev in args:
-        if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
-            raise ValueError(f"{dev} is not a device file.")
+    @_Shell.command
+    def run(self, *args):
+        """partprobe wrapper"""
 
-    command = ["sudo", "partprobe"]
-    command.extend(args)
+        for dev in args:
+            if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
+                raise ValueError(f"{dev} is not a device file.")
 
-    subprocess.run(command, check=True, capture_output=True)
+        command = ["sudo", "partprobe"]
+        command.extend(args)
+
+        subprocess.run(command, check=True, capture_output=True)
 
 
 class SGDisk(_Shell):
