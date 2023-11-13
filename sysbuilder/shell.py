@@ -75,13 +75,21 @@ class DD(_Shell):
 
 
 class Losetup(_Shell):
-    """Wraps `losetup` shell command."""
+    """
+    Wraps `losetup` shell command.
+
+    **THERE IS NO WAY FOR LOSETUP TO DISTINGUISH A FILE THAT SHOULD NOT BE A
+    LOOPDEVICE FROM ONE THAT SHOULD. THIS ACTION IS POTENTIALLY DESTRUCTIVE.**
+    """
 
     @_Shell.command
     @staticmethod
     def run(fp: str, test: Literal["attach", "detach"]) -> None:
         """
         Wraps losetup.
+
+        Calls the relevant action described by `test` (those can be called
+        directly as well).
 
         # Params
 
@@ -94,33 +102,66 @@ class Losetup(_Shell):
                 Does nothing otherwise.
               - detach: Removes the file from being a loop device if it is
                 one. Does nothing otherwise.
-
-        **THERE IS NO WAY FOR LOSETUP TO DISTINGUISH A FILE THAT SHOULD NOT BE A
-        LOOPDEVICE FROM ONE THAT SHOULD. THIS ACTION IS POTENTIALLY DESTRUCTIVE.**
         """
 
         fp = os.path.abspath(fp)
 
         if test == "attach":
-            if stat.S_ISBLK(os.stat(fp).st_mode) > 0:
-                raise ValueError(f"{fp} is a device file already.")
+            Losetup.attach(fp=fp)
 
         if test == "detach":
-            if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
-                raise ValueError(f"{fp} is not a device file.")
+            Losetup.detach(fp=fp)
 
-        args = {
-            "attach": [
-                "--show",
-                "--find",
-                "--nooverlap",
-                "--partscan",
-            ],
-            "detach": ["--detach"],
-        }
+    @_Shell.command
+    @staticmethod
+    def attach(fp: str) -> None:
+        """
+        Wraps losetup.
+
+        For activating files as loop devices only.
+
+        # Params
+
+          - fp (str): Path to target file.
+        """
+
+        fp = os.path.abspath(fp)
+
+        if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
+            raise ValueError(f"{fp} is not a device file.")
+
+        args = ["--detach"]
 
         command = ["sudo", "losetup"]
-        command.extend(args[test])
+        command.extend(args)
+        command.append(fp)
+
+        subprocess.run(
+            command, check=True, capture_output=True, encoding="utf-8"
+        )
+
+    @_Shell.command
+    @staticmethod
+    def detach(fp: str) -> None:
+        """
+        Wraps losetup.
+
+        For deactivating loop devices.
+
+        # Params
+
+          - fp (str): Path to target file.
+        """
+
+        fp = os.path.abspath(fp)
+
+        if stat.S_ISBLK(os.stat(fp).st_mode) > 0:
+            raise ValueError(f"{fp} is a device file already.")
+
+        args = ["--detach"]
+
+        command = ["sudo", "losetup"]
+        command.extend(args)
         command.append(fp)
 
         subprocess.run(
