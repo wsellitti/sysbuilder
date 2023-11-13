@@ -168,6 +168,24 @@ class Losetup(_Shell):
             command, check=True, capture_output=True, encoding="utf-8"
         )
 
+    @_Shell.command
+    @staticmethod
+    def detach_all() -> None:
+        """
+        Wraps losetup.
+
+        For deactivating all loop devices.
+        """
+
+        args = ["--detach-all"]
+
+        command = ["sudo", "losetup"]
+        command.extend(args)
+
+        subprocess.run(
+            command, check=True, capture_output=True, encoding="utf-8"
+        )
+
 
 class Lsblk(_Shell):
     """Wraps `lsblk` shell command."""
