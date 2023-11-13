@@ -324,12 +324,9 @@ blockdev_properties = {
 
 blockdev_required_properties = [
     "alignment",
-    "id-link",
-    "id",
     "disc-aln",
     "dax",
     "disc-gran",
-    "disk-seq",
     "disc-max",
     "disc-zero",
     "fsavail",
@@ -349,13 +346,11 @@ blockdev_required_properties = [
     "min-io",
     "mode",
     "model",
-    "mq",
     "name",
     "opt-io",
     "owner",
     "partflags",
     "partlabel",
-    "partn",
     "parttype",
     "parttypename",
     "partuuid",
@@ -374,7 +369,6 @@ blockdev_required_properties = [
     "sched",
     "serial",
     "size",
-    "start",
     "state",
     "subsystems",
     "mountpoint",
@@ -386,12 +380,6 @@ blockdev_required_properties = [
     "wsame",
     "wwn",
     "zoned",
-    "zone-sz",
-    "zone-wgran",
-    "zone-app",
-    "zone-nr",
-    "zone-omax",
-    "zone-amax",
 ]
 
 validate_json = {
