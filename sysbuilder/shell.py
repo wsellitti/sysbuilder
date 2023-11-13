@@ -84,36 +84,6 @@ class Losetup(_Shell):
 
     @_Shell.command
     @staticmethod
-    def run(fp: str, test: Literal["attach", "detach"]) -> None:
-        """
-        Wraps losetup.
-
-        Calls the relevant action described by `test` (those can be called
-        directly as well).
-
-        # Params
-
-          - fp (str): The filepath to the blockdevice or backing file. If fp
-            is a loop block device the losetup function will attempt to
-            deactivate, otherwise the losetup function will attempt to
-            activate as a loop device.
-          - test (str): Must be one of:
-              - attach: Adds a file as a loop device if it's not one already.
-                Does nothing otherwise.
-              - detach: Removes the file from being a loop device if it is
-                one. Does nothing otherwise.
-        """
-
-        fp = os.path.abspath(fp)
-
-        if test == "attach":
-            Losetup.attach(fp=fp)
-
-        if test == "detach":
-            Losetup.detach(fp=fp)
-
-    @_Shell.command
-    @staticmethod
     def attach(fp: str) -> None:
         """
         Wraps losetup.
@@ -188,7 +158,7 @@ class Losetup(_Shell):
 
     @_Shell.command
     @staticmethod
-    def list(fps: List[str] | None = None) -> Dict[Any, Any]:
+    def lookup(fps: List[str] | None = None) -> Dict[Any, Any]:
         """
         Wraps losetup.
 
