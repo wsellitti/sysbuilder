@@ -186,6 +186,47 @@ class Losetup(_Shell):
             command, check=True, capture_output=True, encoding="utf-8"
         )
 
+    @_Shell.command
+    @staticmethod
+    def list(fps: List[str] | None = None) -> Dict[Any, Any]:
+        """
+        Wraps losetup.
+
+        Gets details for a loop device.
+
+        # Params
+
+          - fps (list): One or more block device file paths.
+
+        # Returns
+
+        (dict) An object describing loop devices.
+
+        """
+
+        if fps is None:
+            fps = []
+
+        for index, fp in enumerate(fps):
+            fps[index] = fp = os.path.abspath(fp)
+
+            if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
+                raise ValueError(f"{fp} is not a device file.")
+
+        args = ["--json", "--output-all", "--list"]
+
+        command = ["sudo", "losetup"]
+        command.extend(args)
+        command.extend(fps)
+
+        result = subprocess.run(
+            command, check=True, capture_output=True, encoding="utf-8"
+        ).stdout
+
+        loopdevices = json.loads(result.stdout)
+
+        return loopdevices
+
 
 class Lsblk(_Shell):
     """Wraps `lsblk` shell command."""
