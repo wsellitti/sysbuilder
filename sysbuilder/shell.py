@@ -36,8 +36,8 @@ class DD(_Shell):
     """Wraps `dd` shell command."""
 
     @_Shell.command
+    @staticmethod
     def run(
-        self,
         output_file: str,
         count: int,
         bs: str = "1M",
@@ -78,7 +78,8 @@ class Losetup(_Shell):
     """Wraps `losetup` shell command."""
 
     @_Shell.command
-    def run(self, fp: str, test: Literal["attach", "detach"]) -> None:
+    @staticmethod
+    def run(fp: str, test: Literal["attach", "detach"]) -> None:
         """
         Wraps losetup.
 
@@ -128,10 +129,11 @@ class Losetup(_Shell):
 
 
 class Lsblk(_Shell):
-    """Wrapps `lsblk` shell command."""
+    """Wraps `lsblk` shell command."""
 
     @_Shell.command
-    def run(self, *args) -> List[Dict[Any, Any]]:
+    @staticmethod
+    def run(*args) -> List[Dict[Any, Any]]:
         """
         lsblk wrapper
 
@@ -159,7 +161,8 @@ class PartProbe(_Shell):
     """Wraps `partprobe` shell command."""
 
     @_Shell.command
-    def run(self, *args):
+    @staticmethod
+    def run(*args):
         """partprobe wrapper"""
 
         for dev in args:
@@ -176,7 +179,8 @@ class SGDisk(_Shell):
     """Wraps `sgdisk` shell command."""
 
     @_Shell.command
-    def run(self, devpath: str, layout: Dict[str, Any]) -> None:
+    @staticmethod
+    def run(devpath: str, layout: List[Dict[str, Any]]) -> None:
         """
         sgdisk wrapper
 
@@ -211,10 +215,10 @@ class SGDisk(_Shell):
         if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
             raise ValueError(f"{devpath} is not a device file.")
 
-        command = ["sgdisk"]
+        command = ["sudo", "sgdisk"]
 
         for flag_dict in layout:
-            part_num = flag_dict["part_num"]
+            part_num = flag_dict["part_number"]
             start_sector = flag_dict.get("start_sector")
             end_sector = flag_dict.get("end_sector")
             typecode = flag_dict.get("typecode")
@@ -233,7 +237,8 @@ class SGDisk(_Shell):
                     "Either start_sector and end_sector or typecode must be provided!"
                 )
             command.extend(addon)
-            command.append(devpath)
+
+        command.append(devpath)
 
         subprocess.run(
             command, check=True, capture_output=True, encoding="utf-8"
