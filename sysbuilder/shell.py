@@ -39,7 +39,7 @@ class DD(_Shell):
     @staticmethod
     def run(
         output_file: str,
-        count: int,
+        count: str,
         bs: str = "1M",
         convs: List[str] | None = None,
         input_file: str = "/dev/zero",
@@ -97,10 +97,15 @@ class Losetup(_Shell):
 
         fp = os.path.abspath(fp)
 
-        if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
+        if stat.S_ISBLK(os.stat(fp).st_mode) > 0:
             raise ValueError(f"{fp} is not a device file.")
 
-        args = ["--detach"]
+        args = [
+            "--show",
+            "--find",
+            "--nooverlap",
+            "--partscan",
+        ]
 
         command = ["sudo", "losetup"]
         command.extend(args)
@@ -125,7 +130,7 @@ class Losetup(_Shell):
 
         fp = os.path.abspath(fp)
 
-        if stat.S_ISBLK(os.stat(fp).st_mode) > 0:
+        if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
             raise ValueError(f"{fp} is a device file already.")
 
         args = ["--detach"]
