@@ -255,7 +255,7 @@ class Lsblk(_Shell):
             encoding="utf-8",
         )
 
-        return json.loads(result.stdout)["blockdevices"]
+        return json.loads(result.stdout)
 
 
 class PartProbe(_Shell):
