@@ -9,10 +9,16 @@ blockdev_properties = {
         "type": "integer",
     },
     "id-link": {
-        "type": "string",
+        "type": [
+            "string",
+            "null",
+        ],
     },
     "id": {
-        "type": "string",
+        "type": [
+            "string",
+            "null",
+        ],
     },
     "disc-aln": {
         "type": "integer",

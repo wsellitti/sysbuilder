@@ -3,12 +3,11 @@
 # pylint: disable=C0103
 
 import os
-import stat
 from subprocess import CalledProcessError
 import tempfile
 import unittest
 from jsonschema import validate
-from sysbuilder.shell import DD, Losetup, Lsblk
+from sysbuilder.shell import DD, Losetup, Lsblk, PartProbe, SGDisk
 from tests.data.lsblk_validate import validate_json
 
 
@@ -88,7 +87,7 @@ class lsblkTest(unittest.TestCase):
     def test_lsblk_all(self):
         """lsblk with no arguments"""
 
-        results = Lsblk.lookup()
+        results = Lsblk.lookup()["blockdevices"]
         self._lsblk_recurse(results)
 
     def test_lsblk_sda(self):
@@ -97,12 +96,11 @@ class lsblkTest(unittest.TestCase):
         # Generally people have sata or nvme, sometimes even both
         for disk_name in ["/dev/sda", "/dev/nvme0n1", "/dev/vda"]:
             try:
-                results = Lsblk.lookup(disk_name)
+                results = Lsblk.lookup(disk_name)["blockdevices"]
+                self._lsblk_recurse(results)
             except FileNotFoundError:
                 results = None
                 continue
-
-        self._lsblk_recurse(results)
 
     def test_lsblk_fail(self):
         """lsblk with one nondevice argument"""
