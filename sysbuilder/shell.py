@@ -234,7 +234,7 @@ class Lsblk(_Shell):
 
     @_Shell.command
     @staticmethod
-    def run(*args) -> List[Dict[Any, Any]]:
+    def lookup(*args) -> List[Dict[Any, Any]]:
         """
         lsblk wrapper
 
