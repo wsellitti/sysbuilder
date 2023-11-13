@@ -67,11 +67,11 @@ class losetupTest(unittest.TestCase):
         Losetup.attach(self.file)
 
         dev = Losetup.identify(self.file)
-        Lsblk.run(dev)
+        Lsblk.lookup(dev)
 
         Losetup.detach(dev)
         with self.assertRaises(CalledProcessError):
-            Lsblk.run(dev)  # The files still exist but lsblk fails.
+            Lsblk.lookup(dev)  # The files still exist but lsblk fails.
 
 
 class lsblkTest(unittest.TestCase):
@@ -88,20 +88,20 @@ class lsblkTest(unittest.TestCase):
     def test_lsblk_all(self):
         """lsblk with no arguments"""
 
-        results = Lsblk.run()
+        results = Lsblk.lookup()
         self._lsblk_recurse(results)
 
     def test_lsblk_sda(self):
         """lsblk with one device argument"""
 
-        results = Lsblk.run("/dev/sda")
+        results = Lsblk.lookup("/dev/sda")
         self._lsblk_recurse(results)
 
     def test_lsblk_fail(self):
         """lsblk with one nondevice argument"""
 
         with self.assertRaises(ValueError):
-            Lsblk.run("/bin/ls")
+            Lsblk.lookup("/bin/ls")
 
 
 class partprobeTest(unittest.TestCase):
