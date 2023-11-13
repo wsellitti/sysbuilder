@@ -94,7 +94,14 @@ class lsblkTest(unittest.TestCase):
     def test_lsblk_sda(self):
         """lsblk with one device argument"""
 
-        results = Lsblk.lookup("/dev/sda")
+        # Generally people have sata or nvme, sometimes even both
+        for disk_name in ["/dev/sda", "/dev/nvme0n1", "/dev/vda"]:
+            try:
+                results = Lsblk.lookup(disk_name)
+            except FileNotFoundError:
+                results = None
+                continue
+
         self._lsblk_recurse(results)
 
     def test_lsblk_fail(self):
