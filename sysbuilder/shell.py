@@ -163,6 +163,32 @@ class Losetup(_Shell):
 
     @_Shell.command
     @staticmethod
+    def identify(fp: str) -> str:
+        """
+        Wraps losetup.
+
+        Finds which loop device is backed by the file `fp`.
+        """
+
+        fp = os.path.abspath(fp)
+
+        if not os.path.exists(fp):
+            raise ValueError(f"{fp} does not exist!")
+
+        args = ["--find", "--show"]
+
+        command = ["sudo", "losetup"]
+        command.extend(args)
+        command.append(fp)
+
+        result = subprocess.run(
+            command, check=True, capture_output=True, encoding="utf-8"
+        )
+
+        return result.stdout.strip()
+
+    @_Shell.command
+    @staticmethod
     def lookup(fps: List[str] | None = None) -> Dict[Any, Any]:
         """
         Wraps losetup.
