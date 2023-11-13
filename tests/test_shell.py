@@ -28,18 +28,16 @@ class ddTest(unittest.TestCase):
     def test_dd_sparse(self):
         """Test sparse file creation."""
 
-        dd = DD()
-        dd.run(self.file, count="2048", convs=["sparse"])
+        DD.run(self.file, count="2048", convs=["sparse"])
 
         blocks_utilized = os.stat(self.file).st_blocks
 
         self.assertEqual(blocks_utilized * 512, 0)
 
     def test_dd(self):
-        """Test sparse file creation."""
+        """Test file creation."""
 
-        dd = DD()
-        dd.run(self.file, count="2048")
+        DD.run(self.file, count="2048")
 
         blocks_utilized = os.stat(self.file).st_blocks
 
@@ -53,8 +51,9 @@ class losetupTest(unittest.TestCase):
         """Test file."""
 
         self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
-        dd = DD()
-        dd.run(self.file, count="2048", convs=["sparse"])
+        DD.run(output_file=self.file, count="2048", convs=["sparse"])
+        if not os.path.exists(self.file):
+            raise FileNotFoundError(self.file)
 
     def tearDown(self):
         """Clean up"""
@@ -65,15 +64,14 @@ class losetupTest(unittest.TestCase):
     def test_losetup(self):
         """Test losetup attach and detach"""
 
-        losetup = Losetup()
-        losetup.run(self.file, test="attach")
+        Losetup.attach(self.file)
 
-        dev = "/dev/loop0"
-        self.assertTrue(stat.S_ISBLK(os.stat(dev).st_mode))
+        dev = Losetup.identify(self.file)
+        Lsblk.run(dev)
 
-        losetup.run(dev, test="detach")
+        Losetup.detach(dev)
         with self.assertRaises(CalledProcessError):
-            Lsblk().run("/dev/loop0")  # The files still exist but lsblk fails.
+            Lsblk.run(dev)  # The files still exist but lsblk fails.
 
 
 class lsblkTest(unittest.TestCase):
@@ -89,21 +87,21 @@ class lsblkTest(unittest.TestCase):
 
     def test_lsblk_all(self):
         """lsblk with no arguments"""
-        lsblk = Lsblk()
-        results = lsblk.run()
+
+        results = Lsblk.run()
         self._lsblk_recurse(results)
 
     def test_lsblk_sda(self):
         """lsblk with one device argument"""
-        lsblk = Lsblk()
-        results = lsblk.run("/dev/sda")
+
+        results = Lsblk.run("/dev/sda")
         self._lsblk_recurse(results)
 
     def test_lsblk_fail(self):
         """lsblk with one nondevice argument"""
+
         with self.assertRaises(ValueError):
-            lsblk = Lsblk()
-            lsblk.run("/bin/ls")
+            Lsblk.run("/bin/ls")
 
 
 class partprobeTest(unittest.TestCase):
