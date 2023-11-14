@@ -233,6 +233,43 @@ class Lsblk(_Shell):
         return json.loads(result.stdout)
 
 
+class Mkfs(_Shell):
+    """
+    mkfs wrapper
+    """
+
+    @staticmethod
+    def create(
+        devpath: str,
+        fstype: str,
+        fs_label: str | None = None,
+        fs_label_flag: str = "-L",
+        fs_args: List[str] | None = None,
+    ) -> None:
+        """
+        mkfs wrapper
+        """
+
+        blockdev = Lsblk.lookup(devpath)  # Block device check
+
+        if blockdev["fstype"] is not None:
+            raise FileExistsError(
+                f"{blockdev['fstype']} detected on {devpath}!"
+            )
+
+        args = ["--type", fstype]
+        args.extend([] if fs_label is None else [fs_label_flag, fs_label])
+        args.extend([] if fs_args is None else fs_args)
+
+        command = ["sudo", "mkfs"]
+        command.extend(args)
+        command.append(devpath)
+
+        subprocess.run(
+            command, check=True, capture_output=True, encoding="utf-8"
+        )
+
+
 class PartProbe(_Shell):
     """Wraps `partprobe` shell command."""
 
