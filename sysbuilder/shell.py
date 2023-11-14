@@ -5,8 +5,7 @@ import logging
 import os
 import stat
 import subprocess
-import time
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List
 
 log = logging.getLogger(__name__)
 

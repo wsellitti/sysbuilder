@@ -109,8 +109,64 @@ class lsblkTest(unittest.TestCase):
             Lsblk.lookup("/bin/ls")
 
 
-class partprobeTest(unittest.TestCase):
+class FormatDiskTest(unittest.TestCase):
     """Test runs of partprobe."""
 
-    def test_partprobe(self):
-        """Test partprobe"""
+    def setUp(self):
+        """Test file."""
+
+        self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
+        DD.run(self.file, count="2048", convs=["sparse"])
+        Losetup.attach(self.file)
+        self.dev = Losetup.identify(self.file)
+
+    def tearDown(self):
+        """Clean up"""
+
+        Losetup.detach(self.dev)
+        os.remove(self.file)
+        os.removedirs(os.path.dirname(self.file))
+
+    def test_sgdisk(self):
+        """Test sgdisk"""
+
+        loop = Lsblk.lookup(self.dev)["blockdevices"][0]
+        self.assertIsNone(loop.get("children"))
+
+        SGDisk.run(
+            devpath=self.dev,
+            layout=[
+                {
+                    "part_number": "1",
+                    "start_sector": "",
+                    "end_sector": "+512M",
+                },
+                {
+                    "part_number": "1",
+                    "typecode": "ef00",
+                },
+                {
+                    "part_number": "2",
+                    "start_sector": "",
+                    "end_sector": "+512M",
+                },
+                {
+                    "part_number": "2",
+                    "typecode": "8200",
+                },
+                {
+                    "part_number": "3",
+                    "start_sector": "",
+                    "end_sector": "",
+                },
+                {
+                    "part_number": "3",
+                    "typecode": "8300",
+                },
+            ],
+        )
+
+        PartProbe.run(self.dev)
+
+        loop = Lsblk.lookup(self.dev)["blockdevices"][0]
+        self.assertEqual(len(loop.get("children", [])), 3)
