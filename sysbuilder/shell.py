@@ -13,28 +13,10 @@ log = logging.getLogger(__name__)
 class _Shell:
     """Generic _Shell class."""
 
-    @staticmethod
-    def command(func) -> Any:
-        """
-        Run test
-
-        # Params
-          - args (list): Arguments for the provided function.
-          - kwargs (dict): Keyword arguments for the provided function.
-
-        """
-
-        def inner(*args, **kwargs):
-            log.debug(func.__name__)
-            return func(*args, **kwargs)
-
-        return inner
-
 
 class DD(_Shell):
     """Wraps `dd` shell command."""
 
-    @_Shell.command
     @staticmethod
     def run(
         output_file: str,
@@ -81,7 +63,6 @@ class Losetup(_Shell):
     LOOPDEVICE FROM ONE THAT SHOULD. THIS ACTION IS POTENTIALLY DESTRUCTIVE.**
     """
 
-    @_Shell.command
     @staticmethod
     def attach(fp: str) -> None:
         """
@@ -114,7 +95,6 @@ class Losetup(_Shell):
             command, check=True, capture_output=True, encoding="utf-8"
         )
 
-    @_Shell.command
     @staticmethod
     def detach(fp: str) -> None:
         """
@@ -142,7 +122,6 @@ class Losetup(_Shell):
             command, check=True, capture_output=True, encoding="utf-8"
         )
 
-    @_Shell.command
     @staticmethod
     def detach_all() -> None:
         """
@@ -160,7 +139,6 @@ class Losetup(_Shell):
             command, check=True, capture_output=True, encoding="utf-8"
         )
 
-    @_Shell.command
     @staticmethod
     def identify(fp: str) -> str:
         """
@@ -186,7 +164,6 @@ class Losetup(_Shell):
 
         return result.stdout.strip()
 
-    @_Shell.command
     @staticmethod
     def lookup(fps: List[str] | None = None) -> Dict[Any, Any]:
         """
@@ -231,7 +208,6 @@ class Losetup(_Shell):
 class Lsblk(_Shell):
     """Wraps `lsblk` shell command."""
 
-    @_Shell.command
     @staticmethod
     def lookup(*args) -> List[Dict[Any, Any]]:
         """
@@ -260,7 +236,6 @@ class Lsblk(_Shell):
 class PartProbe(_Shell):
     """Wraps `partprobe` shell command."""
 
-    @_Shell.command
     @staticmethod
     def run(*args):
         """partprobe wrapper"""
@@ -278,7 +253,6 @@ class PartProbe(_Shell):
 class SGDisk(_Shell):
     """Wraps `sgdisk` shell command."""
 
-    @_Shell.command
     @staticmethod
     def run(devpath: str, layout: List[Dict[str, Any]]) -> None:
         """
