@@ -133,37 +133,33 @@ class FormatDiskTest(unittest.TestCase):
         loop = Lsblk.lookup(self.dev)["blockdevices"][0]
         self.assertIsNone(loop.get("children"))
 
-        SGDisk.run(
+        SGDisk.create_partition(
             devpath=self.dev,
-            layout=[
-                {
-                    "part_number": "1",
-                    "start_sector": "",
-                    "end_sector": "+512M",
-                },
-                {
-                    "part_number": "1",
-                    "typecode": "ef00",
-                },
-                {
-                    "part_number": "2",
-                    "start_sector": "",
-                    "end_sector": "+512M",
-                },
-                {
-                    "part_number": "2",
-                    "typecode": "8200",
-                },
-                {
-                    "part_number": "3",
-                    "start_sector": "",
-                    "end_sector": "",
-                },
-                {
-                    "part_number": "3",
-                    "typecode": "8300",
-                },
-            ],
+            part_number="1",
+            start_sector="",
+            end_sector="+512M",
+        )
+        SGDisk.create_partition(
+            devpath=self.dev,
+            part_number="2",
+            start_sector="",
+            end_sector="+512M",
+        )
+        SGDisk.create_partition(
+            devpath=self.dev,
+            part_number="3",
+            start_sector="",
+            end_sector="",
+        )
+
+        SGDisk.set_partition_type(
+            devpath=self.dev, part_number="1", typecode="ef00"
+        )
+        SGDisk.set_partition_type(
+            devpath=self.dev, part_number="2", typecode="8200"
+        )
+        SGDisk.set_partition_type(
+            devpath=self.dev, part_number="3", typecode="8300"
         )
 
         PartProbe.run(self.dev)

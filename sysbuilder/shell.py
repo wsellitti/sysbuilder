@@ -13,6 +13,19 @@ log = logging.getLogger(__name__)
 class _Shell:
     """Generic _Shell class."""
 
+    @staticmethod
+    def run(cmd: List["str"]) -> str:
+        """
+        Run the command `cmd` and return what's printed to stdout.
+        """
+
+        log.debug(cmd)
+        result = subprocess.run(
+            cmd, capture_output=True, check=True, encoding="utf-8"
+        )
+
+        return result.stdout
+
 
 class DD(_Shell):
     """Wraps `dd` shell command."""
@@ -291,34 +304,56 @@ class SGDisk(_Shell):
     """Wraps `sgdisk` shell command."""
 
     @staticmethod
-    def run(devpath: str, layout: List[Dict[str, Any]]) -> None:
+    def create_partition(
+        devpath: str,
+        part_number: str,
+        start_sector: str = "",
+        end_sector: str = "",
+    ) -> None:
         """
-        sgdisk wrapper
+        Use sgdisk to create a partition.
 
         # Params
 
           - devpath (str): Path to the device.
-          - layout (list): How the partitions should be laid out on the disk
-            provided by `devpath`. Each item represents a different partition.
+          - part_number (str): The partition number. This should be a nonzero
+            integer in a string.
+          - start_sector (str): The on-disk sector a partition should start
+            at. This can be an absolute sector number or a relative value
+            measured in kibibytes, mebibytes, gibibytes, tebibytes, or
+            prebibytes.
+          - end_sector (str): The on-disk sector a partition should end at.
+            This can be an absolute sector number or a relative value measured
+            in kibibytes, mebibytes, gibibytes, tebibytes, or prebibytes.
+        """
 
-        ## Layout
+        if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+            raise ValueError(f"{devpath} is not a device file.")
 
-        Each object provided by `layout` must contain at least one of the
-        following sets of keys (the name of the set is not a value that needs to
-        be provided, the type will be determined based on the keys in the
-        dictionary).
+        command = ["sudo", "sgdisk"]
 
-        Partition:
-          - part_number (str): The partition number.
-          - start_sector (str): The on-disk sector a partition should start at.
-            This can be an absolute sector number or a relative value measured in
-            kibibytes, mebibytes, gibibytes, tebibytes, or prebibytes.
-          - end_sector (str): The on-disk sector a partition should end at. This
-            can be an absolute sector number or a relative value measured in
-            kibibytes, mebibytes, gibibytes, tebibytes, or prebibytes.
+        args = [
+            "--new",
+            ":".join([part_number, str(start_sector), str(end_sector)]),
+        ]
 
-        Typecode:
-          - part_number (int): The partition number.
+        command.extend(args)
+        command.append(devpath)
+
+        SGDisk.run(command)
+
+    @staticmethod
+    def set_partition_type(
+        devpath: str, part_number: str, typecode: str
+    ) -> None:
+        """
+        Use sgdisk to assign a typecode to a partition.
+
+        # Params
+
+          - devpath (str): Path to the device.
+          - part_number (int): The partition number. This should be a nonzero
+            integer in a string.
           - typecode (str): A 4-character hexadecimal value representing
             filesystem type codes.
         """
@@ -328,29 +363,12 @@ class SGDisk(_Shell):
 
         command = ["sudo", "sgdisk"]
 
-        for flag_dict in layout:
-            part_num = flag_dict["part_number"]
-            start_sector = flag_dict.get("start_sector")
-            end_sector = flag_dict.get("end_sector")
-            typecode = flag_dict.get("typecode")
-            if start_sector is not None and end_sector is not None:
-                addon = [
-                    "--new",
-                    ":".join([part_num, str(start_sector), str(end_sector)]),
-                ]
-            elif typecode is not None:
-                addon = [
-                    "--typecode",
-                    ":".join([part_num, typecode]),
-                ]
-            else:
-                raise KeyError(
-                    "Either start_sector and end_sector or typecode must be provided!"
-                )
-            command.extend(addon)
+        args = [
+            "--typecode",
+            ":".join([part_number, typecode]),
+        ]
 
+        command.extend(args)
         command.append(devpath)
 
-        subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        SGDisk.run(command)
