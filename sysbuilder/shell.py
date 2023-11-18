@@ -276,7 +276,7 @@ class Mkfs(_Shell):
         mkfs wrapper
         """
 
-        blockdev = Lsblk.lookup(devpath)  # Block device check
+        blockdev = Lsblk.list_one(devpath)  # Block device check
 
         if blockdev["fstype"] is not None:
             raise FileExistsError(
