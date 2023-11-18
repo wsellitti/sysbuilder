@@ -174,7 +174,7 @@ class Losetup(_Shell):
         return output.strip()
 
     @staticmethod
-    def lookup(fps: List[str] | None = None) -> Dict[Any, Any]:
+    def list_many(fps: List[str] | None = None) -> Dict[Any, Any]:
         """
         Wraps losetup.
 
