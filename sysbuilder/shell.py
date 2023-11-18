@@ -102,7 +102,7 @@ class Losetup(_Shell):
 
         output = Losetup.run(command)
 
-        log.debug("%s created successfully", output)
+        log.info("%s created successfully", output)
 
     @staticmethod
     def detach(fp: str) -> None:
@@ -133,7 +133,7 @@ class Losetup(_Shell):
             Lsblk.list_one(fp)
             raise FileExistsError(fp)
         except subprocess.CalledProcessError:
-            log.debug("%s removed successfully", fp)
+            log.info("%s removed successfully", fp)
 
     @staticmethod
     def detach_all() -> None:
