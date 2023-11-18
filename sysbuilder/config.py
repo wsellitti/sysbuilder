@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict
 from jsonschema import validate
 from sysbuilder._validate import validate_json
-from sysbuilder.storage import _BlockDevice
+from sysbuilder.shell import Lsblk
 
 log = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ class Config:
         disk["path"] = os.path.abspath(disk["path"])
 
         if disk["type"] in ["physical"]:
-            _BlockDevice.list_one(disk["path"])  # Raises errors if not real.
+            Lsblk.list_one(disk["path"])  # Raises errors if not real.
         elif disk["type"] in ["sparse", "raw"]:
             if "size" not in disk.keys():
                 raise KeyError("Missing size in disk description.")
