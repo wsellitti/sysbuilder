@@ -94,7 +94,7 @@ class LsblkTest(unittest.TestCase):
         for result in testlist:
             children = result.get("children")
             if children is not None:
-                lsblkTest._lsblk_recurse(children)
+                LsblkTest._lsblk_recurse(children)
 
     def test_lsblk_all(self):
         """lsblk with no arguments"""
