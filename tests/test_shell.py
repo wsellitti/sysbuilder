@@ -11,7 +11,7 @@ from sysbuilder.shell import DD, Losetup, Lsblk, PartProbe, SGDisk
 from tests.data.lsblk_validate import validate_json
 
 
-class ddTest(unittest.TestCase):
+class DdTest(unittest.TestCase):
     """Test instances of dd command."""
 
     def setUp(self):
@@ -50,7 +50,7 @@ class ddTest(unittest.TestCase):
         self.assertEqual(blocks_utilized * 512, 2147483648)
 
 
-class losetupTest(unittest.TestCase):
+class LosetupTest(unittest.TestCase):
     """Test instances of losetup command."""
 
     def setUp(self):
@@ -85,7 +85,7 @@ class losetupTest(unittest.TestCase):
             Lsblk.list_one(dev)  # The files still exist but lsblk fails.
 
 
-class lsblkTest(unittest.TestCase):
+class LsblkTest(unittest.TestCase):
     """Test instances of lsblk command."""
 
     @staticmethod
