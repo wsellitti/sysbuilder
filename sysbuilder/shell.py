@@ -278,9 +278,7 @@ class Mkfs(_Shell):
         command.extend(args)
         command.append(devpath)
 
-        subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        Mkfs.run(command)
 
 
 class PartProbe(_Shell):
