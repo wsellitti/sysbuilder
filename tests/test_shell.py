@@ -171,3 +171,91 @@ class FormatDiskTest(unittest.TestCase):
 
         self.assertEqual(loopc1["fstype"], "vfat")
         self.assertEqual(loopc3["fstype"], "ext4")
+
+
+class LosetupTest(unittest.TestCase):
+    """Test instances of losetup command."""
+
+    def setUp(self):
+        """Test file."""
+
+        self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.file,
+            count="2048",
+            convs=["sparse"],
+        )
+        if not os.path.exists(self.file):
+            raise FileNotFoundError(self.file)
+
+    def tearDown(self):
+        """Clean up"""
+
+        os.remove(self.file)
+        os.removedirs(os.path.dirname(self.file))
+
+    def test_losetup(self):
+        """Test losetup attach and detach"""
+
+        Losetup.attach(self.file)
+
+        dev = Losetup.identify(self.file)
+        Lsblk.list_one(dev)
+
+        Losetup.detach(dev)
+        with self.assertRaises(CalledProcessError):
+            Lsblk.list_one(dev)  # The files still exist but lsblk fails.
+
+    def test_losetup_identify(self):
+        """Test losetup identify"""
+
+        Losetup.attach(self.file)
+
+        dev = Losetup.identify(self.file)
+        Lsblk.list_one(dev)
+
+        dev2 = Losetup.identify(self.file)
+
+        self.assertEqual(dev, dev2)
+
+        Losetup.detach(dev)
+        with self.assertRaises(CalledProcessError):
+            Lsblk.list_one(dev)  # The files still exist but lsblk fails.
+
+
+class LsblkTest(unittest.TestCase):
+    """Test instances of lsblk command."""
+
+    @staticmethod
+    def _lsblk_recurse(testlist: list):
+        validate(testlist, validate_json)
+        for result in testlist:
+            children = result.get("children")
+            if children is not None:
+                LsblkTest._lsblk_recurse(children)
+
+    def test_lsblk_all(self):
+        """lsblk with no arguments"""
+
+        results = Lsblk.list_all()["blockdevices"]
+        self._lsblk_recurse(results)
+
+    def test_lsblk_sda(self):
+        """lsblk with one device argument"""
+
+        # Generally people have sata or nvme, sometimes even both
+        for disk_name in ["/dev/sda", "/dev/nvme0n1", "/dev/vda"]:
+            try:
+                results = Lsblk.list_one(disk_name)["blockdevices"]
+                self._lsblk_recurse(results)
+            except FileNotFoundError:
+                results = None
+                continue
+
+    def test_lsblk_fail(self):
+        """lsblk with one nondevice argument"""
+
+        with self.assertRaises(ValueError):
+            Lsblk.list_one("/bin/ls")
+
