@@ -31,12 +31,12 @@ class DD(_Shell):
     """Wraps `dd` shell command."""
 
     @staticmethod
-    def run(
+    def write_file(
+        input_file: str,
         output_file: str,
         count: str,
         bs: str = "1M",
         convs: List[str] | None = None,
-        input_file: str = "/dev/zero",
     ) -> None:
         """
         dd wrapper
@@ -61,11 +61,7 @@ class DD(_Shell):
             conversions = ",".join(convs)
             command.append(f"conv={conversions}")
 
-        log.debug(command)
-
-        subprocess.run(
-            command, capture_output=True, check=True, encoding="utf-8"
-        )
+        DD.run(command)
 
 
 class Losetup(_Shell):

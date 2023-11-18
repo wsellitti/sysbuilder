@@ -27,7 +27,12 @@ class ddTest(unittest.TestCase):
     def test_dd_sparse(self):
         """Test sparse file creation."""
 
-        DD.run(self.file, count="2048", convs=["sparse"])
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.file,
+            count="2048",
+            convs=["sparse"],
+        )
 
         blocks_utilized = os.stat(self.file).st_blocks
 
@@ -36,7 +41,9 @@ class ddTest(unittest.TestCase):
     def test_dd(self):
         """Test file creation."""
 
-        DD.run(self.file, count="2048")
+        DD.write_file(
+            input_file="/dev/zero", output_file=self.file, count="2048"
+        )
 
         blocks_utilized = os.stat(self.file).st_blocks
 
@@ -50,7 +57,12 @@ class losetupTest(unittest.TestCase):
         """Test file."""
 
         self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
-        DD.run(output_file=self.file, count="2048", convs=["sparse"])
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.file,
+            count="2048",
+            convs=["sparse"],
+        )
         if not os.path.exists(self.file):
             raise FileNotFoundError(self.file)
 
@@ -116,7 +128,12 @@ class FormatDiskTest(unittest.TestCase):
         """Test file."""
 
         self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
-        DD.run(self.file, count="2048", convs=["sparse"])
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.file,
+            count="2048",
+            convs=["sparse"],
+        )
         Losetup.attach(self.file)
         self.dev = Losetup.identify(self.file)
 
