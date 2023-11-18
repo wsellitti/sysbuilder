@@ -222,28 +222,47 @@ class Lsblk(_Shell):
     """Wraps `lsblk` shell command."""
 
     @staticmethod
-    def lookup(*args) -> List[Dict[Any, Any]]:
+    def list_all() -> List[Dict[Any, Any]]:
         """
-        lsblk wrapper
-
-        args: Active block device files.
+        Get details about all block devices.
         """
-
-        for dev in args:
-            if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
-                raise ValueError(f"{dev} is not a device file.")
 
         command = ["lsblk", "--output-all", "--json"]
-        command.extend(args)
+        output = Lsblk.run(command)
+        return json.loads(output)
 
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            check=True,
-            encoding="utf-8",
-        )
+    @staticmethod
+    def list_one(devpath: str) -> List[Dict[Any, Any]]:
+        """
+        Get details about the block device `devpath`.
+        """
 
-        return json.loads(result.stdout)
+        if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+            raise ValueError(f"{devpath} is not a device file.")
+
+        command = ["lsblk", "--output-all", "--json"]
+        command.append(devpath)
+
+        output = Lsblk.run(command)
+
+        return json.loads(output)
+
+    @staticmethod
+    def list_multiple(devpaths: List[str]) -> List[Dict[Any, Any]]:
+        """
+        Get details about the block devices in `devpaths`.
+        """
+
+        for devpath in devpaths:
+            if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+                raise ValueError(f"{devpath} is not a device file.")
+
+        command = ["lsblk", "--output-all", "--json"]
+        command.extend(devpaths)
+
+        output = Lsblk.run(command)
+
+        return json.loads(output)
 
 
 class Mkfs(_Shell):

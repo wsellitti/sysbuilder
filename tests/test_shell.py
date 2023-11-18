@@ -66,11 +66,11 @@ class losetupTest(unittest.TestCase):
         Losetup.attach(self.file)
 
         dev = Losetup.identify(self.file)
-        Lsblk.lookup(dev)
+        Lsblk.list_one(dev)
 
         Losetup.detach(dev)
         with self.assertRaises(CalledProcessError):
-            Lsblk.lookup(dev)  # The files still exist but lsblk fails.
+            Lsblk.list_one(dev)  # The files still exist but lsblk fails.
 
 
 class lsblkTest(unittest.TestCase):
@@ -87,7 +87,7 @@ class lsblkTest(unittest.TestCase):
     def test_lsblk_all(self):
         """lsblk with no arguments"""
 
-        results = Lsblk.lookup()["blockdevices"]
+        results = Lsblk.list_all()["blockdevices"]
         self._lsblk_recurse(results)
 
     def test_lsblk_sda(self):
@@ -96,7 +96,7 @@ class lsblkTest(unittest.TestCase):
         # Generally people have sata or nvme, sometimes even both
         for disk_name in ["/dev/sda", "/dev/nvme0n1", "/dev/vda"]:
             try:
-                results = Lsblk.lookup(disk_name)["blockdevices"]
+                results = Lsblk.list_one(disk_name)["blockdevices"]
                 self._lsblk_recurse(results)
             except FileNotFoundError:
                 results = None
@@ -106,7 +106,7 @@ class lsblkTest(unittest.TestCase):
         """lsblk with one nondevice argument"""
 
         with self.assertRaises(ValueError):
-            Lsblk.lookup("/bin/ls")
+            Lsblk.list_one("/bin/ls")
 
 
 class FormatDiskTest(unittest.TestCase):
@@ -130,7 +130,7 @@ class FormatDiskTest(unittest.TestCase):
     def test_sgdisk(self):
         """Test sgdisk"""
 
-        loop = Lsblk.lookup(self.dev)["blockdevices"][0]
+        loop = Lsblk.list_one(self.dev)["blockdevices"][0]
         self.assertIsNone(loop.get("children"))
 
         SGDisk.create_partition(
@@ -164,5 +164,5 @@ class FormatDiskTest(unittest.TestCase):
 
         PartProbe.probe_device(self.dev)
 
-        loop = Lsblk.lookup(self.dev)["blockdevices"][0]
+        loop = Lsblk.list_one(self.dev)["blockdevices"][0]
         self.assertEqual(len(loop.get("children", [])), 3)
