@@ -174,36 +174,45 @@ class Losetup(_Shell):
         return output.strip()
 
     @staticmethod
-    def list_many(fps: List[str] | None = None) -> Dict[Any, Any]:
+    def list_one(devpath: str) -> List[Dict[Any, Any]]:
         """
-        Wraps losetup.
-
-        Gets details for a loop device.
-
-        # Params
-
-          - fps (list): One or more block device file paths.
-
-        # Returns
-
-        (dict) An object describing loop devices.
-
+        Gets details for a loop device `devpath`.
         """
 
-        if fps is None:
-            fps = []
+        devpath = os.path.abspath(devpath)
 
-        for index, fp in enumerate(fps):
-            fps[index] = fp = os.path.abspath(fp)
-
-            if stat.S_ISBLK(os.stat(fp).st_mode) == 0:
-                raise ValueError(f"{fp} is not a device file.")
+        if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+            raise ValueError(f"{devpath} is not a device file.")
 
         args = ["--json", "--output-all", "--list"]
 
         command = ["sudo", "losetup"]
         command.extend(args)
-        command.extend(fps)
+        command.append(devpath)
+
+        output = Losetup.run(command)
+
+        loopdevices = json.loads(output)
+
+        return loopdevices
+
+    @staticmethod
+    def list_many(devpaths: List[str]) -> Dict[Any, Any]:
+        """
+        Gets details for loop devices `devpaths`.
+        """
+
+        for index, devpath in enumerate(devpaths):
+            devpaths[index] = devpath = os.path.abspath(devpath)
+
+            if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+                raise ValueError(f"{devpath} is not a device file.")
+
+        args = ["--json", "--output-all", "--list"]
+
+        command = ["sudo", "losetup"]
+        command.extend(args)
+        command.extend(devpaths)
 
         output = Losetup.run(command)
 
