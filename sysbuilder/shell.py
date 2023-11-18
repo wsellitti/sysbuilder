@@ -287,17 +287,16 @@ class PartProbe(_Shell):
     """Wraps `partprobe` shell command."""
 
     @staticmethod
-    def run(*args):
-        """partprobe wrapper"""
+    def probe_device(devpath: str):
+        """Probes a device `devpath` for partitions."""
 
-        for dev in args:
-            if stat.S_ISBLK(os.stat(dev).st_mode) == 0:
-                raise ValueError(f"{dev} is not a device file.")
+        if stat.S_ISBLK(os.stat(devpath).st_mode) == 0:
+            raise ValueError(f"{devpath} is not a device file.")
 
         command = ["sudo", "partprobe"]
-        command.extend(args)
+        command.append(devpath)
 
-        subprocess.run(command, check=True, capture_output=True)
+        PartProbe.run(command)
 
 
 class SGDisk(_Shell):

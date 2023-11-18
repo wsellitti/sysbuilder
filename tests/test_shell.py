@@ -162,7 +162,7 @@ class FormatDiskTest(unittest.TestCase):
             devpath=self.dev, part_number="3", typecode="8300"
         )
 
-        PartProbe.run(self.dev)
+        PartProbe.probe_device(self.dev)
 
         loop = Lsblk.lookup(self.dev)["blockdevices"][0]
         self.assertEqual(len(loop.get("children", [])), 3)
