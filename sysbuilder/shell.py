@@ -104,9 +104,7 @@ class Losetup(_Shell):
         command.extend(args)
         command.append(fp)
 
-        subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        Losetup.run(command)
 
     @staticmethod
     def detach(fp: str) -> None:
@@ -131,9 +129,7 @@ class Losetup(_Shell):
         command.extend(args)
         command.append(fp)
 
-        subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        Losetup.run(command)
 
     @staticmethod
     def detach_all() -> None:
@@ -148,9 +144,7 @@ class Losetup(_Shell):
         command = ["sudo", "losetup"]
         command.extend(args)
 
-        subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        Losetup.run(command)
 
     @staticmethod
     def identify(fp: str) -> str:
@@ -171,11 +165,9 @@ class Losetup(_Shell):
         command.extend(args)
         command.append(fp)
 
-        result = subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        )
+        output = Losetup.run(command)
 
-        return result.stdout.strip()
+        return output.strip()
 
     @staticmethod
     def lookup(fps: List[str] | None = None) -> Dict[Any, Any]:
@@ -209,11 +201,9 @@ class Losetup(_Shell):
         command.extend(args)
         command.extend(fps)
 
-        result = subprocess.run(
-            command, check=True, capture_output=True, encoding="utf-8"
-        ).stdout
+        output = Losetup.run(command)
 
-        loopdevices = json.loads(result.stdout)
+        loopdevices = json.loads(output)
 
         return loopdevices
 
