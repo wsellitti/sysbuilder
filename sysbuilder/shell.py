@@ -174,7 +174,7 @@ class Losetup(_Shell):
         return output.strip()
 
     @staticmethod
-    def list_one(devpath: str) -> List[Dict[Any, Any]]:
+    def list_one(devpath: str) -> Dict[str, List[Dict[Any, Any]]]:
         """
         Gets details for a loop device `devpath`.
         """
@@ -197,7 +197,7 @@ class Losetup(_Shell):
         return loopdevices
 
     @staticmethod
-    def list_many(devpaths: List[str]) -> Dict[Any, Any]:
+    def list_many(devpaths: List[str]) -> Dict[str, List[Dict[Any, Any]]]:
         """
         Gets details for loop devices `devpaths`.
         """
@@ -225,7 +225,7 @@ class Lsblk(_Shell):
     """Wraps `lsblk` shell command."""
 
     @staticmethod
-    def list_all() -> List[Dict[Any, Any]]:
+    def list_all() -> Dict[str, List[Dict[Any, Any]]]:
         """
         Get details about all block devices.
         """
@@ -235,7 +235,7 @@ class Lsblk(_Shell):
         return json.loads(output)
 
     @staticmethod
-    def list_one(devpath: str) -> List[Dict[Any, Any]]:
+    def list_one(devpath: str) -> Dict[str, List[Dict[Any, Any]]]:
         """
         Get details about the block device `devpath`.
         """
@@ -251,7 +251,7 @@ class Lsblk(_Shell):
         return json.loads(output)
 
     @staticmethod
-    def list_multiple(devpaths: List[str]) -> List[Dict[Any, Any]]:
+    def list_multiple(devpaths: List[str]) -> Dict[str, List[Dict[Any, Any]]]:
         """
         Get details about the block devices in `devpaths`.
         """
