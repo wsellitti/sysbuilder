@@ -163,7 +163,7 @@ class Losetup(_Shell):
         if not os.path.exists(fp):
             raise ValueError(f"{fp} does not exist!")
 
-        args = ["--find", "--show"]
+        args = ["--find", "--show", "--nooverlap"]
 
         command = ["sudo", "losetup"]
         command.extend(args)
