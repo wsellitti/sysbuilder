@@ -84,6 +84,22 @@ class LosetupTest(unittest.TestCase):
         with self.assertRaises(CalledProcessError):
             Lsblk.list_one(dev)  # The files still exist but lsblk fails.
 
+    def test_losetup_identify(self):
+        """Test losetup identify"""
+
+        Losetup.attach(self.file)
+
+        dev = Losetup.identify(self.file)
+        Lsblk.list_one(dev)
+
+        dev2 = Losetup.identify(self.file)
+
+        self.assertEqual(dev, dev2)
+
+        Losetup.detach(dev)
+        with self.assertRaises(CalledProcessError):
+            Lsblk.list_one(dev)  # The files still exist but lsblk fails.
+
 
 class LsblkTest(unittest.TestCase):
     """Test instances of lsblk command."""
