@@ -45,7 +45,7 @@ class BlockDevice:
     def from_device_path(cls, devpath: str):
         """JSON from lsblk becomes a BlockDevice."""
 
-        dev = Lsblk.list_one([devpath])["blockdevices"][0]
+        dev = Lsblk.list_one(devpath)["blockdevices"][0]
         return cls(**dev)
 
     @classmethod
@@ -78,7 +78,7 @@ class BlockDevice:
         loopdev = Losetup.identify(path)
         blockdev = cls.from_device_path(devpath=loopdev)
 
-        loop_attr = Losetup.list_one(loopdev)[0]
+        loop_attr = Losetup.list_one(loopdev)["loopdevices"][0]
         blockdev.update(**loop_attr)
 
         return blockdev
