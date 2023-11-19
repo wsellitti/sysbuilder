@@ -211,6 +211,7 @@ class BlockDevice:
             child.unmount()
 
         for mountpoint in self.get("mountpoints", []):
+            log.info("Unmounting %s", mountpoint)
             Umount.umount(mountpoint=mountpoint)
 
     def update(self, **kwargs) -> None:
@@ -228,6 +229,8 @@ class BlockDevice:
         the other it will be either: left alone in _data or added to _data as
         relevant.
         """
+
+        log.info("Updating data for %s", self.path)
 
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
