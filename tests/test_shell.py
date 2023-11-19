@@ -7,7 +7,16 @@ from subprocess import CalledProcessError
 import tempfile
 import unittest
 from jsonschema import validate
-from sysbuilder.shell import DD, Losetup, Lsblk, Mkfs, PartProbe, SGDisk
+from sysbuilder.shell import (
+    DD,
+    Losetup,
+    Lsblk,
+    Mkfs,
+    Mount,
+    PartProbe,
+    SGDisk,
+    Umount,
+)
 from tests.data.lsblk_validate import validate_json
 
 
@@ -259,3 +268,59 @@ class LsblkTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Lsblk.list_one("/bin/ls")
 
+
+class MountTest(unittest.TestCase):
+    """Test the mount/unmount class."""
+
+    def setUp(self):
+        """Setup a loop device."""
+
+        self.mountpoint = tempfile.mkdtemp()
+
+        self.file = os.path.join(tempfile.mkdtemp(), "disk.img")
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.file,
+            count="2048",
+            convs=["sparse"],
+        )
+        Losetup.attach(self.file)
+        self.dev = Losetup.identify(self.file)
+
+        SGDisk.create_partition(
+            devpath=self.dev,
+            part_number="1",
+            start_sector="",
+            end_sector="",
+        )
+        SGDisk.set_partition_type(
+            devpath=self.dev, part_number="1", typecode="8300"
+        )
+
+        PartProbe.probe_device(self.dev)
+
+        self.loop = Lsblk.list_one(self.dev)["blockdevices"][0]
+
+        Mkfs.create(
+            devpath=self.loop["children"][0]["path"],
+            fstype="ext4",
+        )
+
+    def tearDown(self):
+        """Remove a loop device and cleanup it's backing file."""
+
+        Losetup.detach(self.dev)
+        os.remove(self.file)
+        os.removedirs(os.path.dirname(self.file))
+        os.removedirs(self.mountpoint)
+
+    def test_mount_and_unmount(self):
+        """Test mounting and unmounting a partition."""
+
+        Mount.mount(
+            devpath=self.loop["children"][0]["path"], mountpoint=self.mountpoint
+        )
+        self.assertTrue(os.path.ismount(self.mountpoint))
+
+        Umount.umount(mountpoint=self.mountpoint)
+        self.assertFalse(os.path.ismount(self.mountpoint))

@@ -304,6 +304,32 @@ class Mkfs(_Shell):
         Mkfs.run(command)
 
 
+class Mount(_Shell):
+    """Wraps mount."""
+
+    @staticmethod
+    def mount(
+        devpath: str,
+        mountpoint: str,
+        options: List[str] | None = None,
+    ) -> None:
+        """Mount `devpath` of type `fstype` at `mountpoint` with `options`."""
+
+        command = ["sudo", "mount"]
+
+        args = [devpath, mountpoint]
+        if options is not None:
+            args.extend({"-o", ",".join(options)})
+
+        command.extend(args)
+
+        Mount.run(command)
+
+    @staticmethod
+    def list_all() -> List[Dict[str, str]]:
+        """Return a list of dictionaries describing mounts"""
+
+
 class PartProbe(_Shell):
     """Wraps `partprobe` shell command."""
 
@@ -392,3 +418,13 @@ class SGDisk(_Shell):
         command.append(devpath)
 
         SGDisk.run(command)
+
+
+class Umount(_Shell):
+    """Wraps umount."""
+
+    @staticmethod
+    def umount(mountpoint: str) -> None:
+        """Unmount `mountpoint`."""
+
+        Umount.run(["sudo", "umount", mountpoint])
