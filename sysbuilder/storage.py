@@ -230,7 +230,9 @@ class BlockDevice:
         relevant.
         """
 
-        log.info("Updating data for %s", self.path)
+        log.info(
+            "Updating data for %s", self.get("path", default=kwargs["path"])
+        )
 
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
