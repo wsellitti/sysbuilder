@@ -11,7 +11,7 @@ are object-oriented, and call the protected classes as needed.
 
 import logging
 from typing import List, Dict, Any
-from sysbuilder.shell import DD, Lsblk, Losetup, Mkfs
+from sysbuilder.shell import DD, Lsblk, Losetup, Mkfs, PartProbe, SGDisk, Umount
 from sysbuilder.exceptions import BlockDeviceError
 
 log = logging.getLogger(__name__)
@@ -45,14 +45,14 @@ class BlockDevice:
     def from_device_path(cls, devpath: str):
         """JSON from lsblk becomes a BlockDevice."""
 
-        dev = Lsblk.lookup([devpath])["blockdevices"][0]
+        dev = Lsblk.list_one([devpath])["blockdevices"][0]
         return cls(**dev)
 
     @classmethod
     def from_all_devices(cls) -> List:
         """JSON from lsblk becomes a list of BlockDevices."""
 
-        devs = Lsblk.lookup()["blockdevices"]
+        devs = Lsblk.list_all()["blockdevices"]
         return [cls(**dev) for dev in devs]
 
     @classmethod
@@ -68,12 +68,17 @@ class BlockDevice:
         elif size.endswith("P") or size.endswith("p"):
             msize = int(size[:-1]) * 1024 * 1024 * 1024
 
-        DD.run(output_file=path, count=str(msize), convs=["sparse"])
+        DD.write_file(
+            input_file="/dev/zero",
+            output_file=path,
+            count=str(msize),
+            convs=["sparse"],
+        )
         Losetup.attach(path)
         loopdev = Losetup.identify(path)
         blockdev = cls.from_device_path(devpath=loopdev)
 
-        loop_attr = Losetup.lookup(fps=[loopdev])[0]
+        loop_attr = Losetup.list_one(loopdev)[0]
         blockdev.update(**loop_attr)
 
         return blockdev
@@ -126,33 +131,33 @@ class BlockDevice:
 
         self.sync()
 
-    def add_part(self, start, end, typecode) -> None:
+    def add_part(self, start: str, end: str, typecode: str) -> None:
         """
         Add partitions to a disk.
 
         # Params
 
-        - start (str): Sector where the partition should start. Values can be
-          absolute or positions measured in standard notation: "K", "M", "G",
-          "T". Providing and empty string "" will use the next available
-          starting sector. Values beginning with a "+" will start the
-          parittion that distance past the next available starting sector (ie,
-          "+2G" will cause the next partition to start 2 gibibytes after the
-          last partition ended). Values beginning with a "-"  will start the
-          partition that distance from the next available ending sector with
-          enough space (ie, "-2G" will create a partition that starts 2
-          gibibytes before the ending most available sector).
-        - end (str): Sector where the partition should end. Values can be
-          absolute or positions measured in standard notation: "K", "M", "G",
-          "T". Providing and empty string "" will use the next available
-          ending sector from the starting sector. Values beginning with a "+"
-          will end the partition that distance past the starting sector (ie,
-          "+2G" will create a 2 gibibyte partition). Values beginning with a
-          "-" will end the partition that distance from the next available
-          ending sector (ie, "-2G" will create a partition that 2 gibibytes
-          short of the maximum space available for that partiton).
-        - typecode (str): A 4-digit hexadecimal value representing partition
-          type codes, as returned from `sgdisk -L`.
+          - start (str): Sector where the partition should start. Values can be
+            absolute or positions measured in standard notation: "K", "M", "G",
+            "T". Providing and empty string "" will use the next available
+            starting sector. Values beginning with a "+" will start the
+            parittion that distance past the next available starting sector (ie,
+            "+2G" will cause the next partition to start 2 gibibytes after the
+            last partition ended). Values beginning with a "-"  will start the
+            partition that distance from the next available ending sector with
+            enough space (ie, "-2G" will create a partition that starts 2
+            gibibytes before the ending most available sector).
+          - end (str): Sector where the partition should end. Values can be
+            absolute or positions measured in standard notation: "K", "M", "G",
+            "T". Providing and empty string "" will use the next available
+            ending sector from the starting sector. Values beginning with a "+"
+            will end the partition that distance past the starting sector (ie,
+            "+2G" will create a 2 gibibyte partition). Values beginning with a
+            "-" will end the partition that distance from the next available
+            ending sector (ie, "-2G" will create a partition that 2 gibibytes
+            short of the maximum space available for that partiton).
+          - typecode (str): A 4-digit hexadecimal value representing partition
+            type codes, as returned from `sgdisk -L`.
         """
 
         self.sync()
@@ -160,10 +165,17 @@ class BlockDevice:
         if self.devtype not in ["disk", "loop"]:
             raise BlockDeviceError("Only disks may be partitioned.")
 
-        _BlockDevice.create_partition(
+        part_number = str(len(self._children) + 1)
+
+        SGDisk.create_partition(
             devpath=self.path,
+            part_number=part_number,
             start_sector=start,
             end_sector=end,
+        )
+        SGDisk.set_partition_type(
+            devpath=self.path,
+            part_number=part_number,
             typecode=typecode,
         )
 
@@ -182,14 +194,14 @@ class BlockDevice:
         if self.devtype not in ["disk", "loop"]:
             raise BlockDeviceError("Only disks may be probed for partitions.")
 
-        _BlockDevice.partprobe(self.path)
+        PartProbe.probe_device(self.path)
 
         self.sync()
 
     def sync(self) -> None:
         """Update self with current data."""
 
-        blockdev = _BlockDevice.list_one(self.path)
+        blockdev = Lsblk.list_one(self.path)["blockdevices"][0]
         self.update(**blockdev)
 
     def unmount(self) -> None:
@@ -198,7 +210,8 @@ class BlockDevice:
         for child in self._children:
             child.unmount()
 
-        _FileSystem.unmount_all_mounts(devpath=self.path)
+        for mountpoint in self.get("mountpoints", []):
+            Umount.umount(mountpoint=mountpoint)
 
     def update(self, **kwargs) -> None:
         """
