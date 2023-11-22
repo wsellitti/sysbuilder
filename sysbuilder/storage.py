@@ -211,6 +211,8 @@ class BlockDevice:
             child.unmount()
 
         for mountpoint in self.get("mountpoints", []):
+            if mountpoint is None:
+                continue
             log.info("Unmounting %s", mountpoint)
             Umount.umount(mountpoint=mountpoint)
 
