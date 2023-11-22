@@ -40,6 +40,30 @@ class BlockDeviceTest(unittest.TestCase):
 
         validate([my_device._data], validate_json)
 
+    def test_from_device_path(self):
+        """Test BlockDevice from_device_path"""
+
+        shell.DD.write_file(
+            input_file="/dev/zero",
+            output_file=self.img_path,
+            count="32768",
+            convs=["sparse"],
+        )
+
+        shell.Losetup.attach(fp=self.img_path)
+        dev = shell.Losetup.identify(fp=self.img_path)
+
+        my_device = storage.BlockDevice.from_device_path(devpath=dev)
+        validate([my_device._data], validate_json)
+
+    def test_as_image_file(self):
+        """Test BlockDevice as_image_file"""
+
+        my_device = storage.BlockDevice.as_image_file(self.img_path)
+
+        self.assertTrue(os.path.exists(self.img_path))
+        validate([my_device._data], validate_json)
+
 
 # class SparseStorageTesting(unittest.TestCase):
 #     """Test manipulating sparse disk images."""

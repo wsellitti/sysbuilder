@@ -230,9 +230,10 @@ class BlockDevice:
         relevant.
         """
 
-        log.info(
-            "Updating data for %s", self.get("path", default=kwargs["path"])
-        )
+        path = self.get("path")
+        path = kwargs["path"] if path is None else path
+
+        log.info("Updating data for %s", path)
 
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
