@@ -11,7 +11,16 @@ are object-oriented, and call the protected classes as needed.
 
 import logging
 from typing import List, Dict, Any
-from sysbuilder.shell import DD, Lsblk, Losetup, Mkfs, PartProbe, SGDisk, Umount
+from sysbuilder.shell import (
+    DD,
+    Lsblk,
+    Losetup,
+    Mkfs,
+    Mkswap,
+    PartProbe,
+    SGDisk,
+    Umount,
+)
 from sysbuilder.exceptions import BlockDeviceError
 
 log = logging.getLogger(__name__)
@@ -121,13 +130,16 @@ class BlockDevice:
                 f"Cannot format a formatted block device: {self.path}."
             )
 
-        Mkfs.create(
-            devpath=self.path,
-            fstype=fs_type,
-            fs_args=fs_args,
-            fs_label=fs_label,
-            fs_label_flag=fs_label_flag,
-        )
+        if fs_type == "swap":
+            Mkswap.create(devpath=self.path, fs_label=fs_label, fs_args=fs_args)
+        else:
+            Mkfs.create(
+                devpath=self.path,
+                fstype=fs_type,
+                fs_args=fs_args,
+                fs_label=fs_label,
+                fs_label_flag=fs_label_flag,
+            )
 
         self.sync()
 
