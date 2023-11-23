@@ -106,64 +106,64 @@ class SparseStorageTesting(unittest.TestCase):
         stats = os.stat(self.vdi._device.back_path)
         self.assertEqual(stats.st_size, 34359738368)
 
-#     def test_sparse_disk_partitioning(self):
-#         """Check partitioning a disk."""
+    def test_sparse_disk_partitioning(self):
+        """Check partitioning a disk."""
 
-#         cfg = Config(
-#             check=False,
-#             cfg={
-#                 "storage": {
-#                     "disk": {
-#                         "path": self.img_path,
-#                         "type": "sparse",
-#                         "ptable": "gpt",
-#                         "size": "32G",
-#                     },
-#                     "layout": [
-#                         {
-#                             "start": "",
-#                             "end": "+100M",
-#                             "typecode": "ef00",
-#                             "filesystem": {
-#                                 "type": "vfat",
-#                                 "label": "EFI",
-#                                 "args": ["-F", "32"],
-#                                 "label_flag": "-n",
-#                                 "mountpoint": "/efi",
-#                             },
-#                         },
-#                         {
-#                             "start": "",
-#                             "end": "+4G",
-#                             "typecode": "8200",
-#                             "filesystem": {
-#                                 "type": "swap",
-#                                 "label": "swap",
-#                                 "mountpoint": "swap",
-#                             },
-#                         },
-#                         {
-#                             "start": "",
-#                             "end": "",
-#                             "typecode": "8300",
-#                             "filesystem": {
-#                                 "type": "ext4",
-#                                 "label": "root",
-#                                 "mountpoint": "/",
-#                             },
-#                         },
-#                     ],
-#                 }
-#             },
-#         )
+        cfg = Config(
+            check=False,
+            cfg={
+                "storage": {
+                    "disk": {
+                        "path": self.img_path,
+                        "type": "sparse",
+                        "ptable": "gpt",
+                        "size": "32G",
+                    },
+                    "layout": [
+                        {
+                            "start": "",
+                            "end": "+100M",
+                            "typecode": "ef00",
+                            "filesystem": {
+                                "type": "vfat",
+                                "label": "EFI",
+                                "args": ["-F", "32"],
+                                "label_flag": "-n",
+                                "mountpoint": "/efi",
+                            },
+                        },
+                        {
+                            "start": "",
+                            "end": "+4G",
+                            "typecode": "8200",
+                            "filesystem": {
+                                "type": "swap",
+                                "label": "swap",
+                                "mountpoint": "swap",
+                            },
+                        },
+                        {
+                            "start": "",
+                            "end": "",
+                            "typecode": "8300",
+                            "filesystem": {
+                                "type": "ext4",
+                                "label": "root",
+                                "mountpoint": "/",
+                            },
+                        },
+                    ],
+                }
+            },
+        )
 
-#         self.vdi = storage.Storage(storage=cfg.get("storage"))
-#         self.vdi.format()
+        self.vdi = storage.Storage(storage=cfg.get("storage"))
+        self.vdi.format()
 
-#         # There need to be as many partitions as were described in the configuration.
-#         self.assertEqual(
-#             len(self.vdi._device._children), len(cfg.get("storage")["layout"])
-#         )
+        # There need to be as many partitions as were described in the configuration.
+        self.assertEqual(
+            len(self.vdi._device._children), len(cfg.get("storage")["layout"])
+        )
 
-#         fstypes = [c.get("fstype") for c in self.vdi._device._children]
-#         self.assertEqual(fstypes, ["vfat", "swap", "ext4"])
+        fstypes = [c.get("fstype") for c in self.vdi._device._children]
+        self.assertEqual(fstypes, ["vfat", "swap", "ext4"])
