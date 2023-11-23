@@ -12,6 +12,7 @@ from sysbuilder.shell import (
     Losetup,
     Lsblk,
     Mkfs,
+    Mkswap,
     Mount,
     PartProbe,
     SGDisk,
@@ -170,6 +171,7 @@ class FormatDiskTest(unittest.TestCase):
         self.assertIsNone(loopc3["fstype"])
 
         Mkfs.create(devpath=loopc1["path"], fstype="vfat", fs_args=["-F", "32"])
+        Mkswap.create(devpath=loopc2["path"])
         Mkfs.create(devpath=loopc3["path"], fstype="ext4")
 
         loop = Lsblk.list_one(self.dev)["blockdevices"][0]
@@ -179,6 +181,7 @@ class FormatDiskTest(unittest.TestCase):
         loopc3 = loop["children"][2]
 
         self.assertEqual(loopc1["fstype"], "vfat")
+        self.assertEqual(loopc2["fstype"], "swap")
         self.assertEqual(loopc3["fstype"], "ext4")
 
 

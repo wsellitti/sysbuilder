@@ -304,6 +304,41 @@ class Mkfs(_Shell):
         Mkfs.run(command)
 
 
+class Mkswap(_Shell):
+    """mkswap wrapper"""
+
+    @staticmethod
+    def create(
+        devpath: str,
+        fs_label: str | None = None,
+        fs_args: List[str] | None = None,
+    ):
+        """
+        Make a swap area.
+
+        Usage is nearly identical to `shell.Mkfs.create()`.
+        """
+
+        lsblk = Lsblk.list_one(devpath)
+        blockdev = lsblk["blockdevices"][0]  # Block device check
+
+        if blockdev["fstype"] is not None:
+            raise FileExistsError(
+                f"{blockdev['fstype']} detected on {devpath}!"
+            )
+
+        command = ["sudo", "mkswap"]
+
+        args = []
+        args.extend([] if fs_label is None else ["-L", fs_label])
+        args.extend([] if fs_args is None else fs_args)
+
+        command.extend(args)
+        command.append(devpath)
+
+        Mkswap.run(command)
+
+
 class Mount(_Shell):
     """Wraps mount."""
 
