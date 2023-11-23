@@ -117,10 +117,17 @@ class BlockDevice:
         fs_type: str,
         fs_label: str | None = None,
         fs_label_flag: str = "-L",
-        fs_args: list | None = None,
+        fs_args: List[str] | None = None,
     ) -> None:
         """
         Format partitions
+
+        # Params
+          - fs_type (str): The filesystem type.
+          - fs_label (str): The filesystem label.
+          - fs_label_flag (str): The flag used to provide the filesystem label
+            to mkfs.
+          - fs_args (list): Additional arguments for mkfs.
         """
 
         self.sync()
@@ -143,9 +150,21 @@ class BlockDevice:
 
         self.sync()
 
-    def add_part(self, start: str, end: str, typecode: str) -> None:
+    def add_part(  # pylint: disable=R0913
+        self,
+        start: str,
+        end: str,
+        typecode: str,
+        fs_type: str,
+        fs_label: str | None = None,
+        fs_label_flag: str = "-L",
+        fs_args: List[str] | None = None,
+        install_filesystem: bool = True,
+    ) -> None:
         """
-        Add partitions to a disk.
+        Add partitions to a disk. If `install_filesystem` is true then
+        `fs_type`, `fs_label`, `fs_label_flag`, and `fs_args` will be provided
+        to the `add_filesystem` function for that partition.
 
         # Params
 
@@ -170,6 +189,13 @@ class BlockDevice:
             short of the maximum space available for that partiton).
           - typecode (str): A 4-digit hexadecimal value representing partition
             type codes, as returned from `sgdisk -L`.
+          - fs_type (str): The filesystem type.
+          - fs_label (str): The filesystem label.
+          - fs_label_flag (str): The flag used to provide the filesystem label
+            to mkfs.
+          - fs_args (list): Additional arguments for mkfs.
+          - install_filesystem (bool): If `true` call `iinstall_filesystem` on
+            the new partition.
         """
 
         self.sync()
@@ -177,21 +203,29 @@ class BlockDevice:
         if self.devtype not in ["disk", "loop"]:
             raise BlockDeviceError("Only disks may be partitioned.")
 
-        part_number = str(len(self._children) + 1)
+        part_number = len(self._children) + 1
 
         SGDisk.create_partition(
             devpath=self.path,
-            part_number=part_number,
+            part_number=str(part_number),
             start_sector=start,
             end_sector=end,
         )
         SGDisk.set_partition_type(
             devpath=self.path,
-            part_number=part_number,
+            part_number=str(part_number),
             typecode=typecode,
         )
 
         self.sync()
+
+        if install_filesystem:
+            self._children[part_number - 1].add_filesystem(
+                fs_type=fs_type,
+                fs_args=fs_args,
+                fs_label=fs_label,
+                fs_label_flag=fs_label_flag,
+            )
 
     def get(self, val, default=None) -> Any:
         """
