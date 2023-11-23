@@ -155,7 +155,7 @@ class BlockDevice:
         start: str,
         end: str,
         typecode: str,
-        fs_type: str,
+        fs_type: str | None = None,
         fs_label: str | None = None,
         fs_label_flag: str = "-L",
         fs_args: List[str] | None = None,
@@ -220,6 +220,10 @@ class BlockDevice:
         self.sync()
 
         if install_filesystem:
+            if fs_type is None:
+                raise ValueError(
+                    "`fs_type` cannot be None if `install_filesystem` is True."
+                )
             self._children[part_number - 1].add_filesystem(
                 fs_type=fs_type,
                 fs_args=fs_args,
@@ -354,7 +358,9 @@ class Storage:
 
         for part in self._cfg["layout"]:
             self._device.add_part(
-                start=part["start"], end=part["end"], typecode=part["typecode"]
+                start=part["start"],
+                end=part["end"],
+                typecode=part["typecode"],
             )
 
             fs_cfg = part["filesystem"]
