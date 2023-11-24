@@ -1,24 +1,29 @@
 A simple script to practice my python while I automate image building for my
 homelab.
 
-
 # Development
 
 ## Features
 
-- [x] Read from a config file
-- [x] Create virtual storage file
-- [x] Activate virtual storage file as virtual disk
-- [ ] Install partitions to virtual disk
-- [ ] Install filesystems to partitions
-- [ ] Install os to filesystem
-    - [ ] customizable with packages
-    - [ ] customizable with extra files
+  - [x] Read from a config file
+  - [x] Create virtual storage file
+  - [x] Activate virtual storage file as virtual disk
+  - [x] Install partitions to virtual disk
+  - [x] Install filesystems to partitions
+  - [ ] Install os to filesystem
+      - [ ] customizable with packages
+      - [ ] customizable with extra files
 
 ## To Dos
 
-- [ ] Split "shell commands" into their own module
-- [ ] Split "shell commands" into their own classes
+  - [x] Split "shell commands" into their own module
+  - [x] Split "shell commands" into their own classes
+
+## Bug Fix
+
+  - [ ] Running `sync` on a BlockDevice object representing a partition (as a
+    child of a BlockDevice object representing a disk device) does not update
+    the list of children.
 
 
 # Testing
