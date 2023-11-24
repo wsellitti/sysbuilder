@@ -148,8 +148,6 @@ class BlockDevice:
                 fs_label_flag=fs_label_flag,
             )
 
-        self.sync()
-
     def add_part(  # pylint: disable=R0913
         self,
         start: str,
@@ -198,8 +196,6 @@ class BlockDevice:
             the new partition.
         """
 
-        self.sync()
-
         if self.devtype not in ["disk", "loop"]:
             raise BlockDeviceError("Only disks may be partitioned.")
 
@@ -217,7 +213,7 @@ class BlockDevice:
             typecode=typecode,
         )
 
-        self.sync()
+        self.probe()
 
         if install_filesystem:
             if fs_type is None:
@@ -230,6 +226,8 @@ class BlockDevice:
                 fs_label=fs_label,
                 fs_label_flag=fs_label_flag,
             )
+
+        self.sync()
 
     def get(self, val, default=None) -> Any:
         """
@@ -357,22 +355,17 @@ class Storage:
         """
 
         for part in self._cfg["layout"]:
+            fs_cfg = part["filesystem"]
+
             self._device.add_part(
                 start=part["start"],
                 end=part["end"],
                 typecode=part["typecode"],
+                fs_type=fs_cfg["type"],
+                fs_args=fs_cfg.get("args"),
+                fs_label=fs_cfg.get("label"),
+                fs_label_flag=fs_cfg.get("label_flag", "-L"),
             )
-
-            fs_cfg = part["filesystem"]
-
-            for child in self._device._children:  # pylint: disable=W0212
-                if child.get("fstype") is None:
-                    child.add_filesystem(
-                        fs_type=fs_cfg["type"],
-                        fs_args=fs_cfg.get("args"),
-                        fs_label=fs_cfg.get("label"),
-                        fs_label_flag=fs_cfg.get("label_flag", "-L"),
-                    )
 
     def mount(self) -> None:
         """Mount filesystems per configuration."""
