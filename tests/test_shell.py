@@ -171,18 +171,26 @@ class FormatDiskTest(unittest.TestCase):
         self.assertIsNone(loopc3["fstype"])
 
         Mkfs.create(devpath=loopc1["path"], fstype="vfat", fs_args=["-F", "32"])
+        loopc1 = Lsblk.list_one(self.dev)["blockdevices"][0]["children"][0]
+        loopc1a = Lsblk.list_one(f"{self.dev}p1")["blockdevices"][0]
+
         Mkswap.create(devpath=loopc2["path"])
+        loopc2 = Lsblk.list_one(self.dev)["blockdevices"][0]["children"][1]
+        loopc2a = Lsblk.list_one(f"{self.dev}p2")["blockdevices"][0]
+
         Mkfs.create(devpath=loopc3["path"], fstype="ext4")
+        loopc3 = Lsblk.list_one(self.dev)["blockdevices"][0]["children"][2]
+        loopc3a = Lsblk.list_one(f"{self.dev}p3")["blockdevices"][0]
 
-        loop = Lsblk.list_one(self.dev)["blockdevices"][0]
-
-        loopc1 = loop["children"][0]
-        loopc2 = loop["children"][1]
-        loopc3 = loop["children"][2]
+        # loop = Lsblk.list_one(self.dev)["blockdevices"][0]
 
         self.assertEqual(loopc1["fstype"], "vfat")
         self.assertEqual(loopc2["fstype"], "swap")
         self.assertEqual(loopc3["fstype"], "ext4")
+
+        self.assertEqual(loopc1, loopc1a)
+        self.assertEqual(loopc2, loopc2a)
+        self.assertEqual(loopc3, loopc3a)
 
 
 class LosetupTest(unittest.TestCase):
