@@ -338,20 +338,7 @@ class BlockDevice:
 
         log.info("Updating data for %s", path)
 
-        print(id(self))
-        print(attrs)
-
-        def update_children(obj: Dict, children: List[BlockDevice]) -> None:
-            """
-            Updates a child object in children, or appends a new child object.
-            """
-
-            for child in children:
-                if child.path == obj["path"]:
-                    child.update(obj)
-                    return
-
-            children.append(BlockDevice(**obj))
+        incoming = attrs.pop("children", [])
 
         # Avoid overwrite
         for key, value in attrs.items():
@@ -364,12 +351,30 @@ class BlockDevice:
                     f"Cannot update self with '{key}': {value} != {self._data[key]}."
                 )
 
-        # Convert children dictionaries into BlockDevices.
-        children = attrs.pop("children", [])
-        for child in children:
-            update_children(child, self._children)
-
         self._data.update(attrs)
+        self.update_children(children=incoming)
+
+    def update_children(self, children: List[Dict[Any, Any]]):
+        """
+        Update a devices children.
+        """
+
+        log.info("Updating children data for %s", self.path)
+
+        # Convert children dictionaries into BlockDevices.
+        while children:
+            incoming = children.pop(0)
+            for child in self._children:
+                if incoming["path"] == child.path:
+                    incoming = None
+                    break
+
+            if incoming is None:
+                continue
+
+            new_child = BlockDevice()
+            new_child.update(incoming)
+            self._children.append(new_child)
 
 
 class Storage:
