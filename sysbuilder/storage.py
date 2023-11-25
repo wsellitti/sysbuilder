@@ -293,7 +293,6 @@ class BlockDevice:
             raise BlockDeviceError("Only disks may be probed for partitions.")
 
         PartProbe.probe_device(self.path)
-
         self.sync()
 
     def sync(self) -> None:
@@ -352,29 +351,14 @@ class BlockDevice:
                 )
 
         self._data.update(attrs)
-        self.update_children(children=incoming)
 
-    def update_children(self, children: List[Dict[Any, Any]]):
-        """
-        Update a devices children.
-        """
+        updated_children = []
+        for child in incoming:
+            blockdev = BlockDevice()
+            blockdev.update(child)
+            updated_children.append(blockdev)
 
-        log.info("Updating children data for %s", self.path)
-
-        # Convert children dictionaries into BlockDevices.
-        while children:
-            incoming = children.pop(0)
-            for child in self._children:
-                if incoming["path"] == child.path:
-                    incoming = None
-                    break
-
-            if incoming is None:
-                continue
-
-            new_child = BlockDevice()
-            new_child.update(incoming)
-            self._children.append(new_child)
+        self._children = updated_children
 
 
 class Storage:
