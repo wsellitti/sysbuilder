@@ -211,19 +211,9 @@ class BlockDevice:
 
         part_number = len(self._children) + 1
 
-        SGDisk.create_partition(
-            devpath=self.path,
-            part_number=str(part_number),
-            start_sector=start,
-            end_sector=end,
+        self.insert_partition(
+            part_number=part_number, start=start, end=end, typecode=typecode
         )
-        SGDisk.set_partition_type(
-            devpath=self.path,
-            part_number=str(part_number),
-            typecode=typecode,
-        )
-
-        self.probe()
 
         if install_filesystem:
             if fs_type is None:
@@ -243,6 +233,58 @@ class BlockDevice:
         `default` if `val` is not present.
         """
         return self._data.get(val, default)
+
+    def insert_partition(
+        self,
+        part_number: int,
+        start: str,
+        end: str,
+        typecode: str,
+    ) -> None:
+        """
+        Insert partitions onto a disk.
+
+        # Params
+
+          - start (str): Sector where the partition should start. Values can be
+            absolute or positions measured in standard notation: "K", "M", "G",
+            "T". Providing and empty string "" will use the next available
+            starting sector. Values beginning with a "+" will start the
+            parittion that distance past the next available starting sector (ie,
+            "+2G" will cause the next partition to start 2 gibibytes after the
+            last partition ended). Values beginning with a "-"  will start the
+            partition that distance from the next available ending sector with
+            enough space (ie, "-2G" will create a partition that starts 2
+            gibibytes before the ending most available sector).
+          - end (str): Sector where the partition should end. Values can be
+            absolute or positions measured in standard notation: "K", "M", "G",
+            "T". Providing and empty string "" will use the next available
+            ending sector from the starting sector. Values beginning with a "+"
+            will end the partition that distance past the starting sector (ie,
+            "+2G" will create a 2 gibibyte partition). Values beginning with a
+            "-" will end the partition that distance from the next available
+            ending sector (ie, "-2G" will create a partition that 2 gibibytes
+            short of the maximum space available for that partiton).
+          - typecode (str): A 4-digit hexadecimal value representing partition
+            type codes, as returned from `sgdisk -L`.
+        """
+
+        if self.devtype not in ["disk", "loop"]:
+            raise BlockDeviceError("Only disks may be partitioned.")
+
+        SGDisk.create_partition(
+            devpath=self.path,
+            part_number=str(part_number),
+            start_sector=start,
+            end_sector=end,
+        )
+        SGDisk.set_partition_type(
+            devpath=self.path,
+            part_number=str(part_number),
+            typecode=typecode,
+        )
+
+        self.probe()
 
     def probe(self) -> None:
         """Probe for partitions."""
