@@ -55,7 +55,7 @@ class BlockDevice:
         dev = Lsblk.list_one(devpath)["blockdevices"][0]
 
         blockdev = cls()
-        blockdev.update(**dev)
+        blockdev.update(dev)
 
         return blockdev
 
@@ -67,7 +67,7 @@ class BlockDevice:
         blockdevs = []
         for dev in devs:
             blockdev = cls()
-            blockdev.update(**dev)
+            blockdev.update(dev)
             blockdevs.append(blockdev)
 
         return blockdevs
@@ -96,7 +96,7 @@ class BlockDevice:
         blockdev = cls.from_device_path(devpath=loopdev)
 
         loop_attr = Losetup.list_one(loopdev)["loopdevices"][0]
-        blockdev.update(**loop_attr)
+        blockdev.update(loop_attr)
 
         return blockdev
 
@@ -258,7 +258,7 @@ class BlockDevice:
         """Update self with current data."""
 
         blockdev = Lsblk.list_one(self.path)["blockdevices"][0]
-        self.update(**blockdev)
+        self.update(blockdev)
 
     def unmount(self) -> None:
         """Unmount child devices."""
@@ -272,29 +272,32 @@ class BlockDevice:
             log.info("Unmounting %s", mountpoint)
             Umount.umount(mountpoint=mountpoint)
 
-    def update(self, **kwargs) -> None:
+    def update(self, attrs: Dict[Any, Any]) -> None:
         """
         Updates device data.
 
-        The "path" and keys refer to properties block device in the kernel and
-        needs to be added to the BlockDevice object's _data basically
-        immediately. Those keys are also the few keys that can't change, so
-        `avoid_overwrite` is used to treat those keys like an XOR. If a key is
-        provided in self._data and kwargs and they aren't the same value
-        `avoid_overwrite` raises a `KeyError`. If it's provided in both but
-        they are the same value `avoid_overwrite` continues as normal. If it's
-        in neither `avoid_overwrite` raises a `KeyError`. If it's in one or
-        the other it will be either: left alone in _data or added to _data as
-        relevant.
+        # Params
+          = attrs (dict): A dictinonary of attribute names and values that
+          should be added to self._data. The "path" and keys refer to
+          properties block device in the kernel and needs to be added to the
+          BlockDevice object's _data basically immediately. Those keys are
+          also the few keys that can't change, so `avoid_overwrite` is used to
+          treat those keys like an XOR. If a key is provided in self._data and
+          kwargs and they aren't the same value `avoid_overwrite` raises a
+          `KeyError`. If it's provided in both but they are the same value
+          `avoid_overwrite` continues as normal. If it's in neither
+          `avoid_overwrite` raises a `KeyError`. If it's in one or the other
+          it will be either: left alone in _data or added to _data as
+          relevant.
         """
 
         path = self.get("path")
-        path = kwargs["path"] if path is None else path
+        path = attrs["path"] if path is None else path
 
         log.info("Updating data for %s", path)
 
         print(id(self))
-        print(kwargs)
+        print(attrs)
 
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
@@ -303,12 +306,13 @@ class BlockDevice:
 
             for child in children:
                 if child.path == obj["path"]:
-                    child.update(**obj)
+                    child.update(obj)
                     return
 
             children.append(BlockDevice(**obj))
 
-        for key, value in kwargs.items():
+        # Avoid overwrite
+        for key, value in attrs.items():
             if (
                 key in ["path", "back-file", "type"]
                 and key in self._data
@@ -319,11 +323,11 @@ class BlockDevice:
                 )
 
         # Convert children dictionaries into BlockDevices.
-        children = kwargs.pop("children", [])
+        children = attrs.pop("children", [])
         for child in children:
             update_children(child, self._children)
 
-        self._data.update(kwargs)
+        self._data.update(attrs)
 
 
 class Storage:
