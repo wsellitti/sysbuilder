@@ -31,13 +31,11 @@ class BlockDevice:
     Block Device represents an actual block device in /dev.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self) -> None:
         """Create block device."""
 
         self._data = {}
         self._children = []
-
-        self.update(**kwargs)
 
     def __eq__(self, other) -> bool:
         """Compare self to other."""
@@ -55,14 +53,24 @@ class BlockDevice:
         """JSON from lsblk becomes a BlockDevice."""
 
         dev = Lsblk.list_one(devpath)["blockdevices"][0]
-        return cls(**dev)
+
+        blockdev = cls()
+        blockdev.update(**dev)
+
+        return blockdev
 
     @classmethod
     def from_all_devices(cls) -> List:
         """JSON from lsblk becomes a list of BlockDevices."""
 
         devs = Lsblk.list_all()["blockdevices"]
-        return [cls(**dev) for dev in devs]
+        blockdevs = []
+        for dev in devs:
+            blockdev = cls()
+            blockdev.update(**dev)
+            blockdevs.append(blockdev)
+
+        return blockdevs
 
     @classmethod
     def as_image_file(cls, path: str, size: str = "32G"):
@@ -148,6 +156,8 @@ class BlockDevice:
                 fs_label_flag=fs_label_flag,
             )
 
+        self.sync()
+
     def add_part(  # pylint: disable=R0913
         self,
         start: str,
@@ -227,8 +237,6 @@ class BlockDevice:
                 fs_label_flag=fs_label_flag,
             )
 
-        self.sync()
-
     def get(self, val, default=None) -> Any:
         """
         Return the value `val` from `self._data`, or the default value
@@ -284,6 +292,9 @@ class BlockDevice:
         path = kwargs["path"] if path is None else path
 
         log.info("Updating data for %s", path)
+
+        print(id(self))
+        print(kwargs)
 
         def update_children(obj: Dict, children: List[BlockDevice]) -> None:
             """
