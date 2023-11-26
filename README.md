@@ -21,9 +21,10 @@ homelab.
 
 ## Bug Fix
 
-  - [ ] Running `sync` on a BlockDevice object representing a partition (as a
+  - [x] Running `sync` on a BlockDevice object representing a partition (as a
     child of a BlockDevice object representing a disk device) does not update
     the list of children.
+    Added a random sleep to stop what appears to be a race condition?
 
 
 # Testing
