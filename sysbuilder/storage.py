@@ -10,6 +10,7 @@ are object-oriented, and call the protected classes as needed.
 """
 
 import logging
+import time
 from typing import List, Dict, Any
 from sysbuilder.shell import (
     DD,
@@ -137,8 +138,6 @@ class BlockDevice:
             to mkfs.
           - fs_args (list): Additional arguments for mkfs.
         """
-
-        self.sync()
 
         if self.get("fstype") is not None:
             raise BlockDeviceError(
@@ -298,6 +297,7 @@ class BlockDevice:
     def sync(self) -> None:
         """Update self with current data."""
 
+        time.sleep(0.01)
         blockdev = Lsblk.list_one(self.path)["blockdevices"][0]
         self.update(blockdev)
 

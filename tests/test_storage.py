@@ -42,7 +42,8 @@ class BlockDeviceTest(unittest.TestCase):
 
         lsblk = shell.Lsblk.list_one(devpath=dev)
 
-        my_device = storage.BlockDevice(**lsblk["blockdevices"][0])
+        my_device = storage.BlockDevice()
+        my_device.update(lsblk["blockdevices"][0])
 
         validate([my_device._data], validate_json)
 
@@ -74,6 +75,7 @@ class BlockDeviceTest(unittest.TestCase):
         """Test creating multiple partitions on an image file."""
 
         my_device = storage.BlockDevice.as_image_file(self.img_path)
+        self.assertEqual(len(my_device._children), 0)
 
         my_device.add_part(
             start="",
@@ -82,20 +84,27 @@ class BlockDeviceTest(unittest.TestCase):
             fs_type="vfat",
             fs_args=["-F", "32"],
         )
+        self.assertEqual(len(my_device._children), 1)
+
         my_device.add_part(
             start="",
             end="+4G",
             typecode="8200",
             fs_type="swap",
         )
+        self.assertEqual(len(my_device._children), 2)
+
         my_device.add_part(
             start="",
             end="",
             typecode="8300",
             fs_type="ext4",
         )
-
         self.assertEqual(len(my_device._children), 3)
+
+        for child in my_device._children:
+            self.assertIsInstance(child, storage.BlockDevice)
+
         self.assertEqual(
             [x.get("fstype") for x in my_device._children],
             ["vfat", "swap", "ext4"],
