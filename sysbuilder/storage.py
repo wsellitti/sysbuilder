@@ -352,13 +352,19 @@ class BlockDevice:
 
         self._data.update(attrs)
 
-        updated_children = []
-        for child in incoming:
-            blockdev = BlockDevice()
-            blockdev.update(child)
-            updated_children.append(blockdev)
+        while incoming:
+            incoming_child = incoming.pop(0)
 
-        self._children = updated_children
+            for child in self._children:
+                if incoming_child["path"] == child.path:
+                    child.update(incoming_child)
+                    incoming_child = None
+                    break
+
+            if incoming_child is not None:
+                blockdev = BlockDevice()
+                blockdev.update(incoming_child)
+                self._children.append(blockdev)
 
 
 class Storage:
