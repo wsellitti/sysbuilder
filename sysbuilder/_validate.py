@@ -63,6 +63,7 @@ validate_json = {
                                     },
                                     "mountpoint": {
                                         "type": "string",
+                                        "pattern": r"^(/.*|swap)",
                                     },
                                     "label": {
                                         "type": "string",
