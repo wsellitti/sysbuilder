@@ -48,3 +48,6 @@ class BadCfgTest(unittest.TestCase):
 
     def test_cfg_bad_vdisk_without_size(self):
         self._template("vdisk_without_size")
+
+    def test_cfg_bad_layout_incorrect_mountpoint(self):
+        self._template("layout_incorrect_mountpoint")
