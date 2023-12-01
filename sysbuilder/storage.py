@@ -10,14 +10,17 @@ are object-oriented, and call the protected classes as needed.
 """
 
 import logging
+import os
 import time
-from typing import List, Dict, Any
+import tempfile
+from typing import Any, Dict, List, Tuple
 from sysbuilder.shell import (
     DD,
     Lsblk,
     Losetup,
     Mkfs,
     Mkswap,
+    Mount,
     PartProbe,
     SGDisk,
     Umount,
@@ -110,6 +113,11 @@ class BlockDevice:
         if self.devtype == "loop":
             return self._data["back-file"]
         return self._data["path"]
+
+    @property
+    def children(self) -> Tuple:
+        """Write protect the list of children (the children can still be updated)."""
+        return tuple(self._children)
 
     @property
     def devtype(self) -> str:
@@ -387,7 +395,15 @@ class Storage:
         self._device = BlockDevice.as_image_file(
             path=self._cfg["disk"]["path"], size=self._cfg["disk"]["size"]
         )
+
+        self._mount_dir = tempfile.mkdtemp()
+
         log.info("Found device file: %s", self._device.path)
+
+    @property
+    def root(self):
+        """Return the root of the mounted BlockDevice partitions."""
+        return self._mount_dir
 
     def format(self) -> None:
         """
@@ -420,4 +436,57 @@ class Storage:
             )
 
     def mount(self) -> None:
-        """Mount filesystems per configuration."""
+        """
+        Mount filesystems per configuration.
+
+        Mount identifies the listed mountpoints in the provided configuration,
+        compiles them into a single list, then sorts them alphabetically so
+        earlier directories will be mounted before later directories. `swap`
+        is treated as a special mountpoint, swap partitions won't be mounted
+        but their corresponding BlockDevices will be marked as swap partitions
+        so they can be added to fstab later. Multiple partitions can be marked
+        as swap but otherwise if multiple partitions have the same mountpoint
+        only the last partition listed in the configuration will be mounted.
+
+        The key `host_mountpoint` will be added to each partition in storages
+        internal BlockDevice to keep track of what's where.
+        """
+
+        mount_order = []  # Order the mountpoints so they're mounted ccrrectly.
+        mount_mapping = {}
+
+        for index, item in enumerate(self._cfg["layout"]):
+            mountpoint = item["filesystem"]["mountpoint"]
+
+            if mountpoint == "swap":
+                # Swap isn't "mountpoint", so it needs to be handled
+                # differently, also multiple partitions can be marked as swap.
+
+                self._device.children[index].update(
+                    attrs={"host_mountpoint": "swap"}
+                )
+
+            else:
+                # remove the leading /
+                mountpoint = os.sep.join(mountpoint.split(os.sep)[1:])
+
+                host_mountpoint = os.path.join(self._mount_dir, mountpoint)
+
+                mount_order.append(host_mountpoint)
+                mount_mapping[host_mountpoint] = self._device.children[index]
+
+                self._device.children[index].update(
+                    attrs={"host_mountpoint": host_mountpoint}
+                )
+
+        mount_order.sort()
+
+        for mountpoint in mount_order:
+            devpath = mount_mapping[mountpoint].path
+
+            if not os.path.exists(mountpoint):
+                os.makedirs(mountpoint)
+
+            Mount.mount(devpath=devpath, mountpoint=mountpoint)
+
+        self._device.sync()

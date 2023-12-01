@@ -118,44 +118,7 @@ class SparseStorageTesting(unittest.TestCase):
         """Set up."""
         tmpd = tempfile.mkdtemp()
         self.img_path = f"{tmpd}/disk.img"
-
-    def tearDown(self):
-        """
-        Clean up.
-
-        All functions must implement the self.vdi object to test storage. The
-        self.vdi object should be an object from the storage.Storage class.
-        """
-
-        self.vdi._device.unmount()
-        shell.Losetup.detach(fp=self.vdi._device.path)
-
-    def test_sparse_disk_creation(self):
-        """Test creating a sparse loop file."""
-
-        cfg = Config(
-            check=False,
-            cfg={
-                "storage": {
-                    "disk": {
-                        "path": self.img_path,
-                        "type": "sparse",
-                        "ptable": "gpt",
-                        "size": "32G",
-                    }
-                }
-            },
-        )
-
-        self.vdi = storage.Storage(storage=cfg.get("storage"))
-        self.assertTrue(self.vdi._device.back_path == self.img_path)
-        stats = os.stat(self.vdi._device.back_path)
-        self.assertEqual(stats.st_size, 34359738368)
-
-    def test_sparse_disk_partitioning(self):
-        """Check partitioning a disk."""
-
-        cfg = Config(
+        self.cfg = Config(
             check=False,
             cfg={
                 "storage": {
@@ -203,13 +166,53 @@ class SparseStorageTesting(unittest.TestCase):
             },
         )
 
-        self.vdi = storage.Storage(storage=cfg.get("storage"))
+    def tearDown(self):
+        """
+        Clean up.
+
+        All functions must implement the self.vdi object to test storage. The
+        self.vdi object should be an object from the storage.Storage class.
+        """
+
+        self.vdi._device.unmount()
+        shell.Losetup.detach(fp=self.vdi._device.path)
+
+    def test_sparse_disk_creation(self):
+        """Test creating a sparse loop file."""
+
+        self.vdi = storage.Storage(storage=self.cfg.get("storage"))
+        self.assertTrue(self.vdi._device.back_path == self.img_path)
+        stats = os.stat(self.vdi._device.back_path)
+        self.assertEqual(stats.st_size, 34359738368)
+
+    def test_sparse_disk_partitioning(self):
+        """Check partitioning a disk."""
+
+        self.vdi = storage.Storage(storage=self.cfg.get("storage"))
         self.vdi.format()
 
         # There need to be as many partitions as were described in the configuration.
         self.assertEqual(
-            len(self.vdi._device._children), len(cfg.get("storage")["layout"])
+            len(self.vdi._device._children),
+            len(self.cfg.get("storage")["layout"]),
         )
 
         fstypes = [c.get("fstype") for c in self.vdi._device._children]
         self.assertEqual(fstypes, ["vfat", "swap", "ext4"])
+
+    def test_storage_mount(self):
+        """Test Storage.mount()"""
+
+        self.vdi = storage.Storage(storage=self.cfg.get("storage"))
+        self.vdi.format()
+        self.vdi.mount()
+
+        for child in self.vdi._device.children:
+            host_mountpoint = child.get("host_mountpoint")
+
+            if host_mountpoint == "swap":
+                continue
+
+            self.assertTrue(os.path.exists(host_mountpoint))
+            self.assertTrue(os.path.isdir(host_mountpoint))
+            self.assertTrue(os.path.ismount(host_mountpoint))
