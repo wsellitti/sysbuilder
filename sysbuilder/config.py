@@ -4,8 +4,7 @@ import json
 import logging
 import os
 from typing import Any, Dict
-from jsonschema import validate
-from sysbuilder._validate import validate_json
+from sysbuilder.validation import config
 from sysbuilder.shell import Lsblk
 
 log = logging.getLogger(__name__)
@@ -125,7 +124,7 @@ class Config:
         values in the dictionary.
         """
 
-        validate(self._cfg, validate_json)
+        config.check(self._cfg)
 
         for function in dir(self):
             if function.startswith("_validate_"):
@@ -140,7 +139,6 @@ class Config:
         """
 
         disk = self._cfg["storage"]["disk"]
-        layout = self._cfg["storage"]["layout"]
 
         disk["path"] = os.path.abspath(disk["path"])
 
