@@ -2,7 +2,7 @@
 
 from typing import Dict
 from jsonschema import validate
-from sysbuilder.validation.helpers import type_dict, type_list, type_str
+from sysbuilder._validation.helpers import type_dict, type_list, type_str
 
 
 def check(cfg: Dict) -> None:

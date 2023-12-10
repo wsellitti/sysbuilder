@@ -4,8 +4,8 @@ import json
 import logging
 import os
 from typing import Any, Dict
-from sysbuilder.validation import config
 from sysbuilder.shell import Lsblk
+from sysbuilder._validation import config
 
 log = logging.getLogger(__name__)
 
