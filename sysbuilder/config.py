@@ -148,6 +148,10 @@ class Config:
             if "size" not in disk.keys():
                 raise KeyError("Missing size in disk description.")
 
-    def get(self, key: Any) -> Dict[Any, Any]:
+    def get(self, key: Any, default: Any = None) -> Dict[Any, Any]:
         """Get's a configuration value."""
+
+        if default is not None:
+            self._cfg.get(key, default)
+
         return self._cfg[key]
