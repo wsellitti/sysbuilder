@@ -1,24 +1,142 @@
 """Test shell module."""
 
-# pylint: disable=C0103
+# pylint: disable=C0103,W0212,W0201
 
 import os
 from subprocess import CalledProcessError
 import tempfile
 import unittest
 from jsonschema import validate
+from sysbuilder.config import Config
+from sysbuilder.storage import Storage
 from sysbuilder.shell import (
+    ArchChroot,
     DD,
     Losetup,
     Lsblk,
     Mkfs,
     Mkswap,
     Mount,
+    Pacstrap,
     PartProbe,
     SGDisk,
     Umount,
 )
 from tests.data.lsblk_validate import validate_json
+
+
+class ArchChrootTest(unittest.TestCase):
+    """Test instances of the arch-chroot."""
+
+    def setUp(self):
+        """Set up."""
+
+        tmpd = tempfile.mkdtemp()
+        self.img_path = f"{tmpd}/disk.img"
+        self.cfg = Config(
+            check=False,
+            cfg={
+                "storage": {
+                    "disk": {
+                        "path": self.img_path,
+                        "type": "sparse",
+                        "ptable": "gpt",
+                        "size": "32G",
+                    },
+                    "layout": [
+                        {
+                            "start": "",
+                            "end": "+100M",
+                            "typecode": "ef00",
+                            "filesystem": {
+                                "type": "vfat",
+                                "label": "EFI",
+                                "args": ["-F", "32"],
+                                "label_flag": "-n",
+                                "mountpoint": "/efi",
+                            },
+                        },
+                        {
+                            "start": "",
+                            "end": "+4G",
+                            "typecode": "8200",
+                            "filesystem": {
+                                "type": "swap",
+                                "label": "swap",
+                                "mountpoint": "swap",
+                            },
+                        },
+                        {
+                            "start": "",
+                            "end": "",
+                            "typecode": "8300",
+                            "filesystem": {
+                                "type": "ext4",
+                                "label": "root",
+                                "mountpoint": "/",
+                            },
+                        },
+                    ],
+                }
+            },
+        )
+
+    def tearDown(self):
+        """
+        Clean up.
+        """
+
+        ArchChroot.chroot(
+            chroot_dir=self.vdi.root,
+            chroot_command="gpgconf",
+            chroot_command_args=[
+                "--homedir",
+                "/etc/pacman.d/gnupg",
+                "--kill",
+                "gpg-agent",
+            ],
+        )
+
+        self.vdi._device.unmount()
+        Losetup.detach(fp=self.vdi._device.path)
+
+    def test_install(self):
+        """Test pacstrap with packages."""
+
+        self.vdi = Storage(storage=self.cfg.get("storage"))
+        self.vdi.format()
+        self.vdi.mount()
+
+        for child in self.vdi._device.children:
+            host_mountpoint = child.get("host_mountpoint")
+
+            if host_mountpoint == "swap":
+                continue
+
+        Pacstrap.install(
+            fs_root=self.vdi.root,
+            packages=[
+                "openssh",
+                "iptables",
+                "python3",
+                "reflector",
+                "base",
+                "linux",
+                "grub",
+                "efibootmgr",
+                "cloud-init",
+            ],
+        )
+
+        ArchChroot.chroot(
+            chroot_dir=self.vdi.root,
+            chroot_command="/usr/bin/touch",
+            chroot_command_args=["/IAMAMAGICFILE"],
+        )
+
+        self.assertTrue(
+            os.path.exists(os.path.join(self.vdi.root, "IAMAMAGICFILE"))
+        )
 
 
 class DdTest(unittest.TestCase):
@@ -335,3 +453,63 @@ class MountTest(unittest.TestCase):
 
         Umount.umount(mountpoint=self.mountpoint)
         self.assertFalse(os.path.ismount(self.mountpoint))
+
+
+class PacstrapTest(unittest.TestCase):
+    """Test Pacstrap command."""
+
+    def setUp(self):
+        """Set up."""
+
+        self.fake_root = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up."""
+
+        # This is required to kill the running gpg-agent proces in the chroot
+        # so it can be unmounted/removed/cleaned up
+        ArchChroot.chroot(
+            chroot_dir=self.fake_root,
+            chroot_command="gpgconf",
+            chroot_command_args=[
+                "--homedir",
+                "/etc/pacman.d/gnupg",
+                "--kill",
+                "gpg-agent",
+            ],
+        )
+
+    def test_install(self):
+        """Test pacstrap with packages."""
+
+        Pacstrap.install(
+            fs_root=self.fake_root,
+            packages=[
+                "openssh",
+                "iptables",
+                "python3",
+                "reflector",
+                "base",
+                "linux",
+                "grub",
+                "efibootmgr",
+                "cloud-init",
+            ],
+        )
+
+        test_paths = {
+            "sshd_cfg": "etc/ssh/sshd_config",
+            "reflector_cfg": "etc/xdg/reflector/reflector.conf",
+            "grub_cfg": "etc/default/grub",
+            "cloud_init_cfg": "etc/cloud/cloud.cfg",
+            "iptables_sample_rules": "usr/share/iptables/simple_firewall.rules",
+            "python3_exe": "usr/bin/python3",
+            "efibootmgr_exe": "usr/bin/efibootmgr",
+            "linux_img": "boot/vmlinuz-linux",
+        }
+
+        for k, v in test_paths.items():
+            try:
+                self.assertTrue(os.path.exists(os.path.join(self.fake_root, v)))
+            except AssertionError as assert_err:
+                raise AssertionError(k) from assert_err

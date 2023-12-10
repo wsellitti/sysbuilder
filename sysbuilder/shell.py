@@ -27,6 +27,31 @@ class _Shell:
         return result.stdout
 
 
+class ArchChroot(_Shell):
+    """Wraps arch-chroot."""
+
+    @staticmethod
+    def chroot(
+        chroot_dir: str,
+        chroot_command: str,
+        chroot_command_args: List[str] | None = None,
+    ) -> None:
+        """Chroots to `mountpoint`, runs `command` with `command_args`."""
+
+        command = ["sudo", "arch-chroot"]
+
+        args = [chroot_dir]
+
+        args.append(chroot_command)
+
+        if chroot_command_args is not None:
+            args.extend(chroot_command_args)
+
+        command.extend(args)
+
+        ArchChroot.run(command)
+
+
 class DD(_Shell):
     """Wraps `dd` shell command."""
 
@@ -343,6 +368,22 @@ class Mount(_Shell):
     """Wraps mount."""
 
     @staticmethod
+    def bind(
+        source: str, target: str, options: List[str] | None = None
+    ) -> None:
+        """Mount bind source onto target."""
+
+        command = ["mount", "--bind"]
+
+        args = [source, target]
+        if options is not None:
+            args.extend({"-o", ",".join(options)})
+
+        command.extend(args)
+
+        Mount.run(command)
+
+    @staticmethod
     def mount(
         devpath: str,
         mountpoint: str,
@@ -350,7 +391,7 @@ class Mount(_Shell):
     ) -> None:
         """Mount `devpath` of type `fstype` at `mountpoint` with `options`."""
 
-        command = ["sudo", "mount"]
+        command = ["mount"]
 
         args = [devpath, mountpoint]
         if options is not None:
@@ -363,6 +404,23 @@ class Mount(_Shell):
     @staticmethod
     def list_all() -> List[Dict[str, str]]:
         """Return a list of dictionaries describing mounts"""
+
+
+class Pacstrap(_Shell):
+    """Wrap pacstrap."""
+
+    @staticmethod
+    def install(fs_root: str, packages: List[str]) -> None:
+        """Install packages to the filesystem at `fs_root`."""
+
+        command = ["pacstrap", "-K", "-M"]
+
+        args = [fs_root]
+        args.extend(packages)
+
+        command.extend(args)
+
+        Pacstrap.run(command)
 
 
 class PartProbe(_Shell):
