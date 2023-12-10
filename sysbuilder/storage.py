@@ -386,8 +386,8 @@ class Storage:
 
         # Params
 
-        - storage (dict): A dictionary representing a device and it's partition
-          layout.
+          - storage (dict): A dictionary representing a device and it's
+            partition layout.
         """
 
         self._cfg = storage
