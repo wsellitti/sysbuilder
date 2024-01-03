@@ -1,0 +1,1 @@
+I am a generic file used in vdi testing.
