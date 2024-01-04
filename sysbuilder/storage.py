@@ -25,7 +25,7 @@ from sysbuilder.shell import (
     SGDisk,
     Umount,
 )
-from sysbuilder.exceptions import BlockDeviceError
+from sysbuilder.exceptions import BlockDeviceError, LoopDeviceNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -233,6 +233,14 @@ class BlockDevice:
                 fs_label=fs_label,
                 fs_label_flag=fs_label_flag,
             )
+
+    def close(self) -> None:
+        """Deactivate the loopback device if self.devtype is "loop"."""
+
+        if self.devtype != "loop":
+            raise LoopDeviceNotFoundError(f"{self.path} is not a loop device!")
+
+        Losetup.detach(fp=self.path)
 
     def get(self, val, default=None) -> Any:
         """
