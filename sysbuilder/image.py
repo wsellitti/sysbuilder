@@ -37,35 +37,15 @@ class VDI:
         else:
             raise ValueError("Configs or a config file must be provided.")
 
-        self._storage = Storage(self._cfg.get("storage"))
+        self._install_cfg = self._cfg.get("install")
+        self._storage_cfg = self._cfg.get("storage")
 
-        self._storage.format()
-        self._storage.mount()
-
-        self.install_cfg = self._cfg.get("install")
-
-        if self.install_cfg["base"] == "archlinux":
-            self._archlinux_system()
-        else:
-            raise ValueError(
-                "The base install system must be one of the following: ['archlinux']."
-            )
-
-        if self.install_cfg["service_manager"] == "systemd":
-            self._systemd()
-        else:
-            raise ValueError(
-                "The process management system must be one of the following: ['systemd']."
-            )
-
-        self._locale()
-        self._timezone()
-        self._copy_files()
+        self._storage = Storage(self._storage_cfg)
 
     def _archlinux_system(self):
         """Install an arch based system."""
 
-        packages = self.install_cfg.get("packages", [])
+        packages = self._install_cfg.get("packages", [])
         packages.append("base")
 
         # Archlinux install only supports Pacstrap
@@ -74,7 +54,7 @@ class VDI:
     def _copy_files(self):
         """Add files to vdi"""
 
-        files = self.install_cfg.get("files", [])
+        files = self._install_cfg.get("files", [])
         for f in files:
             src = f["src"]
             dest = f["dest"]
@@ -112,7 +92,7 @@ class VDI:
     def _locale(self):
         """Set locale information."""
 
-        locale = self.install_cfg.get("locale", ["en_US.UTF-8 UTF-8"])
+        locale = self._install_cfg.get("locale", ["en_US.UTF-8 UTF-8"])
         if isinstance(locale, str):
             locale = [locale]
 
@@ -133,8 +113,8 @@ class VDI:
         Enable/disable services in a systemd-based system.
         """
 
-        enabled_services = self.install_cfg.get("services").get("enabled")
-        disabled_services = self.install_cfg.get("services").get("disabled")
+        enabled_services = self._install_cfg.get("services").get("enabled")
+        disabled_services = self._install_cfg.get("services").get("disabled")
 
         if enabled_services is not None:
             args = ["enable"]
@@ -157,7 +137,7 @@ class VDI:
     def _timezone(self):
         """Set the timezone."""
 
-        timezone = self.install_cfg.get("timezone", "UTC")
+        timezone = self._install_cfg.get("timezone", "UTC")
         timezone_file = f"/usr/share/zoneinfo/{timezone}"
 
         ArchChroot.chroot(
@@ -165,3 +145,27 @@ class VDI:
             chroot_command="ln",
             chroot_command_args=["-s", timezone_file, "/etc/localtime"],
         )
+
+    def create(self):
+        """Create the VDI."""
+
+        self._storage.format()
+        self._storage.mount()
+
+        if self._install_cfg["base"] == "archlinux":
+            self._archlinux_system()
+        else:
+            raise ValueError(
+                "The base install system must be one of the following: ['archlinux']."
+            )
+
+        if self._install_cfg["service_manager"] == "systemd":
+            self._systemd()
+        else:
+            raise ValueError(
+                "The process management system must be one of the following: ['systemd']."
+            )
+
+        self._locale()
+        self._timezone()
+        self._copy_files()
