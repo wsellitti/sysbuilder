@@ -3,6 +3,7 @@
 # pylint: disable=C0103,W0212,W0201
 
 import os
+from shutil import rmtree
 from subprocess import CalledProcessError
 import tempfile
 import unittest
@@ -99,6 +100,8 @@ class ArchChrootTest(unittest.TestCase):
 
         self.vdi._device.unmount()
         Losetup.detach(fp=self.vdi._device.path)
+
+        rmtree(os.path.dirname(self.img_path))
 
     def test_install(self):
         """Test pacstrap with packages."""
@@ -478,6 +481,8 @@ class PacstrapTest(unittest.TestCase):
                 "gpg-agent",
             ],
         )
+
+        rmtree(self.fake_root)
 
     def test_install(self):
         """Test pacstrap with packages."""

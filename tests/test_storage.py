@@ -27,6 +27,9 @@ class BlockDeviceTest(unittest.TestCase):
         loop = shell.Losetup.identify(self.img_path)
         shell.Losetup.detach(loop)
 
+        os.remove(self.img_path)
+        os.removedirs(os.path.dirname(self.img_path))
+
     def test_init(self):
         """Test BlockDeviceInit"""
 
@@ -176,6 +179,9 @@ class SparseStorageTesting(unittest.TestCase):
 
         self.vdi._device.unmount()
         shell.Losetup.detach(fp=self.vdi._device.path)
+
+        os.remove(self.img_path)
+        os.removedirs(os.path.dirname(self.img_path))
 
     def test_sparse_disk_creation(self):
         """Test creating a sparse loop file."""

@@ -19,10 +19,11 @@ class VDITest(unittest.TestCase):
     def tearDown(self):
         """Cleanup"""
 
-        self.vdi._storage._device.unmount()
-        self.vdi._storage._device.close()
+        if getattr(self, "vdi", None) is not None:
+            self.vdi._storage._device.unmount()
+            self.vdi._storage._device.close()
 
-        os.remove(self.vdi._storage._device.back_path)
+            os.remove(self.vdi._storage._device.back_path)
 
     def test_init(self):
         """Test VDI.__init__"""
