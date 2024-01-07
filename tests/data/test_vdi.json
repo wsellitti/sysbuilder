@@ -51,11 +51,12 @@
             "openssh",
             "iptables",
             "python3",
-            "base",
             "linux",
             "grub",
             "efibootmgr"
         ],
+        "locale": "en_US.UTF-8 UTF-8",
+        "service_manager": "systemd",
         "services": {
             "enabled": [
                 "sshd.service",
@@ -70,6 +71,7 @@
                 "owner": "root",
                 "group": "root"
             }
-        ]
+        ],
+        "timezone": "UTC"
     }
 }

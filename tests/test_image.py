@@ -2,7 +2,11 @@
 Test sysbuilder.image classes
 """
 
+# pylint: disable=W0212,W0201
+
+
 import logging
+import os
 import unittest
 from sysbuilder.image import VDI
 
@@ -16,6 +20,9 @@ class VDITest(unittest.TestCase):
         """Cleanup"""
 
         self.vdi._storage._device.unmount()
+        self.vdi._storage._device.close()
+
+        os.remove(self.vdi._storage._device.back_path)
 
     def test_init(self):
         """Test VDI.__init__"""
