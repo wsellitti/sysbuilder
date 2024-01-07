@@ -25,6 +25,7 @@ def check(cfg: Dict) -> None:
     install_schema = type_dict(
         properties={
             "base": type_str(enum=["archlinux"]),
+            "locale": type_str(),
             "package_manager": type_str(enum=["pacman"]),
             "packages": type_list(items=type_str()),
             "services": type_dict(
@@ -33,6 +34,7 @@ def check(cfg: Dict) -> None:
                     "disabled": type_list(items=type_str()),
                 }
             ),
+            "service_manager": type_str(enum=["systemd"]),
             "files": type_list(
                 items=type_dict(
                     properties={
@@ -45,6 +47,7 @@ def check(cfg: Dict) -> None:
                     required=["src", "dest", "mode", "owner", "group"],
                 )
             ),
+            "timezone": type_str(),
         },
         required=["base", "package_manager"],
     )
