@@ -91,17 +91,21 @@ class VDI:
 
             os.chmod(host_dest, mode=int(mode, base=8))
 
-            vdi_owner_id = ArchChroot.chroot(
-                chroot_dir=self._storage.root,
-                chroot_command="getent",
-                chroot_command_args=["passwd", owner],
-            ).split(":")[2]
+            vdi_owner_id = int(
+                ArchChroot.chroot(
+                    chroot_dir=self._storage.root,
+                    chroot_command="getent",
+                    chroot_command_args=["passwd", owner],
+                ).split(":")[2]
+            )
 
-            vdi_group_id = ArchChroot.chroot(
-                chroot_dir=self._storage.root,
-                chroot_command="getent",
-                chroot_command_args=["group", group],
-            ).split(":")[2]
+            vdi_group_id = int(
+                ArchChroot.chroot(
+                    chroot_dir=self._storage.root,
+                    chroot_command="getent",
+                    chroot_command_args=["group", group],
+                ).split(":")[2]
+            )
 
             chown(path=host_dest, user=vdi_owner_id, group=vdi_group_id)
 
