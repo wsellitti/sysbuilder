@@ -1,8 +1,7 @@
 """Install Operating Systems on VM images."""
 
 import logging
-from sysbuilder.config import Config
-from sysbuilder.storage import Storage
+from sysbuilder.image import VDI
 
 log = logging.getLogger(__name__)
 
@@ -10,10 +9,8 @@ log = logging.getLogger(__name__)
 def main():
     """Main."""
 
-    cfg = Config.from_file("config.json")
-
-    vdi = Storage(storage=cfg.get("storage"))
-    vdi.format()
+    vdi = VDI(cfg_path="config.json")
+    vdi.create()
 
 
 if __name__ == "__main__":
