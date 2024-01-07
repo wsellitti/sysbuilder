@@ -49,7 +49,7 @@ class ArchChroot(_Shell):
 
         command.extend(args)
 
-        ArchChroot.run(command)
+        return ArchChroot.run(command)
 
 
 class DD(_Shell):
