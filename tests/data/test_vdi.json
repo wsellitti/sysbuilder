@@ -46,6 +46,7 @@
     },
     "install": {
         "base": "archlinux",
+        "locale": "en_US.UTF-8 UTF-8",
         "package_manager": "pacman",
         "packages": [
             "openssh",
@@ -55,7 +56,6 @@
             "grub",
             "efibootmgr"
         ],
-        "locale": "en_US.UTF-8 UTF-8",
         "service_manager": "systemd",
         "services": {
             "enabled": [
