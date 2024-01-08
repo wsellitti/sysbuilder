@@ -152,6 +152,103 @@ class VDI:
             chroot_command_args=["-s", timezone_file, "/etc/localtime"],
         )
 
+    def _users(self):
+        """
+        Configure user accounts.
+
+        If no users are provided in the ocnfiguration a default user account
+        with credentials user/password will be created instead.
+
+        Creating a user account with a password of None will disable the
+        password for that user account.
+        """
+
+        default_user = {
+            "name": "user",
+            "gecos": "Default User",
+            "password": "$6$jW4LnOFrEdUujayf$vpC4OSBi3Uo8yuGpLDjgB4CHMk8rnqzk3rDt6tFzHJcJlM2OKKnGbA6QZllJGr9ur/2SxdxdALgFzEiEvYYeW/",
+            "user_id": 1000,
+        }
+
+        users = self._install_cfg.get("users", [default_user])
+
+        for user in users:
+            name = user["name"]
+            gecos = user.get("gecos", name)
+            password = user.get("password")
+            group = user.get("group", name)
+            service_account = user.get("service_account", False)
+            additional_groups = user.get("additional_groups")
+            home_dir = user.get("home_dir")
+            shell = user.get("shell", "/bin/bash")
+            create_home = user.get("create_home", True)
+            ssh_keys = user.get("ssh_keys", [])
+
+            useradd_args = ["-g", group, "-c", gecos, "-s", shell]
+
+            if home_dir is not None:
+                useradd_args.extend(["-d", home_dir])
+            if additional_groups is not None:
+                useradd_args.extend(["-G", ",".join(additional_groups)])
+            if service_account:
+                useradd_args.extend(["-r"])
+            if password is not None:
+                useradd_args.extend(["-p", password])
+            if create_home:
+                useradd_args.extend(["-m"])
+
+            useradd_args.append(name)
+
+            ArchChroot.chroot(
+                chroot_dir=self._storage.root,
+                chroot_command="useradd",
+                chroot_command_args=useradd_args,
+            )
+
+            if ssh_keys:
+                home_dir = ArchChroot.chroot(
+                    chroot_dir=self._storage.root,
+                    chroot_command="getent",
+                    chroot_command_args=["passwd", name],
+                ).split(":")[5]
+
+                if os.path.abspath(home_dir):
+                    home_dir = os.path.relpath(home_dir, "/")
+                home_dir = os.path.join(self._storage.root, home_dir)
+
+                os.makedirs(name=os.path.join(home_dir, ".ssh"))
+
+                ssh_keyfile = os.path.join(home_dir, ".ssh", "authorized_keys")
+
+                # TODO: Fix encoding
+                with open(
+                    path=os.path.join(home_dir, ".ssh", "authorized_keys"),
+                    mode="w",
+                    encoding="utf-8",
+                ) as f:
+                    for key in ssh_keys:
+                        f.write(f"{key}\n")
+
+                vdi_owner_id = int(
+                    ArchChroot.chroot(
+                        chroot_dir=self._storage.root,
+                        chroot_command="getent",
+                        chroot_command_args=["passwd", name],
+                    ).split(":")[2]
+                )
+
+                vdi_group_id = int(
+                    ArchChroot.chroot(
+                        chroot_dir=self._storage.root,
+                        chroot_command="getent",
+                        chroot_command_args=["group", group],
+                    ).split(":")[2]
+                )
+
+                chown(path=ssh_keyfile, user=vdi_owner_id, group=vdi_group_id)
+
+                os.chmod(path=ssh_keyfile, mode=0o600)
+
     def create(self):
         """Create the VDI."""
 
@@ -174,4 +271,5 @@ class VDI:
 
         self._locale()
         self._timezone()
+        self._users()
         self._copy_files()
