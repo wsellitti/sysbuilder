@@ -2,7 +2,13 @@
 
 from typing import Dict
 from jsonschema import validate
-from sysbuilder._validation.helpers import type_dict, type_list, type_str
+from sysbuilder._validation.helpers import (
+    type_bool,
+    type_dict,
+    type_int,
+    type_list,
+    type_str,
+)
 
 
 def check(cfg: Dict) -> None:
@@ -48,6 +54,22 @@ def check(cfg: Dict) -> None:
                 )
             ),
             "timezone": type_str(),
+            "users": type_list(
+                items=type_dict(
+                    properties={
+                        "name": type_str(),
+                        "gecos": type_str(),
+                        "password": type_str(),
+                        "user_id": type_int(),
+                        "service_account": type_bool(),
+                        "additional_groups": type_list(items=type_str()),
+                        "shell": type_str(),
+                        "home_dir": type_str(),
+                        "create_home": type_bool(),
+                        "ssh_keys": type_list(items=type_str()),
+                    }
+                )
+            ),
         },
         required=["base", "package_manager"],
     )
