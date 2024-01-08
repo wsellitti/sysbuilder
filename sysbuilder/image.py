@@ -95,6 +95,22 @@ class VDI:
 
             chown(path=host_dest, user=vdi_owner_id, group=vdi_group_id)
 
+    def _grub(self):
+        """Install grub"""
+
+        # TODO: pull target from config
+        # TODO: pull efi directory from config
+        ArchChroot.chroot(
+            chroot_dir=self._storage.root,
+            chroot_command="grub-install",
+            chroot_command_args=[
+                "--target=x86_64-efi",
+                "--boot-directory=/boot/grub",
+                "--efi-directory=/efi",
+                self._storage._device.path,  # pylint: disable=W0212
+            ],
+        )
+
     def _locale(self):
         """Set locale information."""
 
