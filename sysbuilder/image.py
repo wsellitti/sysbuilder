@@ -103,15 +103,14 @@ class VDI:
         if isinstance(locale, str):
             locale = [locale]
 
-        with tempfile.NamedTemporaryFile(
-            mode="a", encoding="UTF-8", delete=False
+        # TODO: Fix encoding
+        with open(
+            path=os.path.join(self._storage.root, "etc/locale.conf"),
+            mode="a",
+            encoding="UTF-8",
         ) as f:
             for l in locale:
                 f.write(f"{l}\n")
-            locale_file = f.name
-
-        vdi_locale_fp = os.path.join(self._storage.root, "etc/locale.conf")
-        copy(src=locale_file, dst=vdi_locale_fp)
 
         ArchChroot.chroot(self._storage.root, chroot_command="locale-gen")
 
