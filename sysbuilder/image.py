@@ -5,7 +5,6 @@ This module concerns the VDIs that will be created by sysbuilder.
 import logging
 import os
 from shutil import chown, copy
-import tempfile
 from typing import Any, Dict
 from sysbuilder.config import Config
 from sysbuilder.shell import ArchChroot, Pacstrap
