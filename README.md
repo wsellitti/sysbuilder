@@ -10,14 +10,9 @@ homelab.
   - [x] Activate virtual storage file as virtual disk
   - [x] Install partitions to virtual disk
   - [x] Install filesystems to partitions
-  - [ ] Install os to filesystem
-      - [ ] customizable with packages
-      - [ ] customizable with extra files
-
-## To Dos
-
-  - [x] Split "shell commands" into their own module
-  - [x] Split "shell commands" into their own classes
+  - [x] Install os to filesystem
+      - [x] customizable with packages
+      - [x] customizable with extra files
 
 ## Bug Fix
 
