@@ -111,6 +111,27 @@ class VDI:
             ],
         )
 
+    def _initramfs(self):
+        """
+        Recreate initramfs. Run at the end of create automatically incase
+        anything has happened that would justify recreating the initram.
+        """
+
+        installed_kernel = os.listdir(
+            os.path.join(self._storage.root, "usr", "lib", "modules")
+        )[0]
+
+        ArchChroot.chroot(
+            chroot_dir=self._storage.root,
+            chroot_command="mkinitcpio",
+            chroot_command_args=[
+                "-k",
+                installed_kernel,
+                "-g",
+                "/boot/initramfs-linux.img",
+            ],
+        )
+
     def _locale(self):
         """Set locale information."""
 
@@ -288,3 +309,4 @@ class VDI:
         self._timezone()
         self._users()
         self._copy_files()
+        self._initramfs()
