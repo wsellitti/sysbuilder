@@ -59,7 +59,7 @@ def check(cfg: Dict) -> None:
                     properties={
                         "name": type_str(),
                         "gecos": type_str(),
-                        "password": type_str(),
+                        "password": type_str(or_empty=True),
                         "user_id": type_int(),
                         "service_account": type_bool(),
                         "additional_groups": type_list(items=type_str()),

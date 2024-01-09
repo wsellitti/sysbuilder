@@ -51,10 +51,14 @@ def type_list(
     return val
 
 
-def type_str(enum: List = None, pattern: str = None) -> Dict:
+def type_str(
+    enum: List = None, pattern: str = None, or_empty: bool = False
+) -> Dict:
     """String"""
 
     val = {"type": "string"}
+    if or_empty:
+        val = {"type": ["string", "null"]}
 
     if enum is not None:
         val["enum"] = enum
