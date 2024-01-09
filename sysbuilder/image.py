@@ -5,6 +5,7 @@ This module concerns the VDIs that will be created by sysbuilder.
 import logging
 import os
 from shutil import chown, copy
+from subprocess import CalledProcessError
 from typing import Any, Dict
 from sysbuilder.config import Config
 from sysbuilder.shell import ArchChroot, Pacstrap
@@ -234,6 +235,23 @@ class VDI:
                 useradd_args.extend(["-m"])
 
             useradd_args.append(name)
+
+            try:
+                # TODO: Make getent command.
+                ArchChroot.chroot(
+                    chroot_dir=self._storage.root,
+                    chroot_command="getent",
+                    chroot_command_args=["group", group],
+                )
+            except CalledProcessError as cpe:
+                if cpe.returncode == 2:
+                    ArchChroot.chroot(
+                        chroot_dir=self._storage.root,
+                        chroot_command="groupadd",
+                        chroot_command_args=[group],
+                    )
+                else:
+                    raise cpe
 
             ArchChroot.chroot(
                 chroot_dir=self._storage.root,
