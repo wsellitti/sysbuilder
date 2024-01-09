@@ -141,7 +141,7 @@ class VDI:
 
         # TODO: Fix encoding
         with open(
-            path=os.path.join(self._storage.root, "etc/locale.conf"),
+            file=os.path.join(self._storage.root, "etc/locale.conf"),
             mode="a",
             encoding="UTF-8",
         ) as f:
@@ -258,7 +258,7 @@ class VDI:
 
                 # TODO: Fix encoding
                 with open(
-                    path=os.path.join(home_dir, ".ssh", "authorized_keys"),
+                    file=os.path.join(home_dir, ".ssh", "authorized_keys"),
                     mode="w",
                     encoding="utf-8",
                 ) as f:
@@ -310,3 +310,4 @@ class VDI:
         self._users()
         self._copy_files()
         self._initramfs()
+        self._grub()
