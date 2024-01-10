@@ -413,6 +413,12 @@ class Storage:
         """Return the root of the mounted BlockDevice partitions."""
         return self._mount_dir
 
+    def close(self) -> None:
+        """Clean up."""
+
+        self._device.unmount()
+        self._device.close()
+
     def format(self) -> None:
         """
         Install partitions and filesystems on empty disks.

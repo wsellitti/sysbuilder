@@ -309,6 +309,11 @@ class VDI:
 
                 os.chmod(path=ssh_keyfile, mode=0o600)
 
+    def close(self):
+        """Clean up scratch directories."""
+
+        self._storage.close()
+
     def create(self):
         """Create the VDI."""
 

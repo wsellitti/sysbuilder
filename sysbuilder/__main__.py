@@ -11,6 +11,7 @@ def main():
 
     vdi = VDI(cfg_path="config.json")
     vdi.create()
+    vdi.close()
 
 
 if __name__ == "__main__":
