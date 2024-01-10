@@ -112,6 +112,12 @@ class VDI:
             ],
         )
 
+        ArchChroot.chroot(
+            chroot_dir=self._storage.root,
+            chroot_command="grub-mkconfig",
+            chroot_command_args=["-o", "/boot/grub/grub.cfg"],
+        )
+
     def _initramfs(self):
         """
         Recreate initramfs. Run at the end of create automatically incase
