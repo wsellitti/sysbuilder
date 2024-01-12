@@ -106,7 +106,7 @@ class VDI:
             chroot_command="grub-install",
             chroot_command_args=[
                 "--target=x86_64-efi",
-                "--boot-directory=/boot/grub",
+                "--boot-directory=/boot",
                 "--efi-directory=/efi",
                 self._storage._device.path,  # pylint: disable=W0212
             ],
