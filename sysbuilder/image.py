@@ -52,11 +52,12 @@ class VDI:
         Pacstrap.install(fs_root=self._storage.root, packages=packages)
 
         # Disable root
-        ArchChroot.chroot(
-            self._storage.root,
-            chroot_command="passwd",
-            chroot_command_args=["-d", "root"],
-        )
+        if self._install_cfg.get("disable_root", True):
+            ArchChroot.chroot(
+                self._storage.root,
+                chroot_command="passwd",
+                chroot_command_args=["-d", "root"],
+            )
 
     def _copy_files(self):
         """Add files to vdi"""

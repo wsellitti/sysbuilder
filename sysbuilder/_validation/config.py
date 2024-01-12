@@ -31,6 +31,7 @@ def check(cfg: Dict) -> None:
     install_schema = type_dict(
         properties={
             "base": type_str(enum=["archlinux"]),
+            "disable_root": type_bool(),
             "locale": type_str(),
             "package_manager": type_str(enum=["pacman"]),
             "packages": type_list(items=type_str()),
