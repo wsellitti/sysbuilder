@@ -55,8 +55,8 @@ class VDI:
         if self._install_cfg.get("disable_root", True):
             ArchChroot.chroot(
                 self._storage.root,
-                chroot_command="passwd",
-                chroot_command_args=["-d", "root"],
+                chroot_command="usermod",
+                chroot_command_args=["--lock", "--expiredate", "1", "root"],
             )
 
     def _copy_files(self):
