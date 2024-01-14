@@ -4,7 +4,7 @@ This module concerns the VDIs that will be created by sysbuilder.
 
 import logging
 import os
-from shutil import chown, copy
+from shutil import chown, copy, copytree
 from subprocess import CalledProcessError
 from typing import Any, Dict
 from sysbuilder.config import Config
@@ -42,6 +42,86 @@ class VDI:
 
         self._storage = Storage(self._storage_cfg)
 
+    @staticmethod
+    def _copy_file(
+        root: str, src: str, dest: str, mode: str, owner: str, group: str
+    ):
+        """Copy files to vdi"""
+
+        if os.path.abspath(dest):
+            dest = os.path.relpath(dest, "/")
+        dest = os.path.join(root, dest)
+
+        copy(src=src, dst=dest)
+
+        os.chmod(dest, mode=int(mode, base=8))
+
+        vdi_owner_id = int(
+            ArchChroot.chroot(
+                chroot_dir=root,
+                chroot_command="getent",
+                chroot_command_args=["passwd", owner],
+            ).split(":")[2]
+        )
+
+        vdi_group_id = int(
+            ArchChroot.chroot(
+                chroot_dir=root,
+                chroot_command="getent",
+                chroot_command_args=["group", group],
+            ).split(":")[2]
+        )
+
+        chown(path=dest, user=vdi_owner_id, group=vdi_group_id)
+
+    @staticmethod
+    def _copy_directory(
+        root: str, src: str, dest: str, mode: str, owner: str, group: str
+    ):
+        """Copy directories to vdi"""
+
+        if os.path.abspath(dest):
+            dest = os.path.relpath(dest, "/")
+        dest = os.path.join(root, dest)
+
+        copytree(src=src, dst=dest)
+
+        os.chmod(dest, mode=int(mode, base=8))
+
+        vdi_owner_id = int(
+            ArchChroot.chroot(
+                chroot_dir=root,
+                chroot_command="getent",
+                chroot_command_args=["passwd", owner],
+            ).split(":")[2]
+        )
+
+        vdi_group_id = int(
+            ArchChroot.chroot(
+                chroot_dir=root,
+                chroot_command="getent",
+                chroot_command_args=["group", group],
+            ).split(":")[2]
+        )
+
+        chown(path=dest, user=vdi_owner_id, group=vdi_group_id)
+
+    @staticmethod
+    def _create_symlink(root: str, src: str, dest: str):
+        """Create symlinks in the vdi."""
+
+        if os.path.abspath(dest):
+            host_dest = os.path.relpath(dest, "/")
+        host_dest = os.path.join(root, host_dest)
+
+        os.makedirs(os.path.dirname(host_dest))
+
+        ArchChroot.chroot(
+            chroot_dir=root,
+            chroot_command="ln",
+            chroot_command_args=["-s", src, dest],
+        )
+
     def _archlinux_system(self):
         """Install an arch based system."""
 
@@ -59,43 +139,52 @@ class VDI:
                 chroot_command_args=["--lock", "--expiredate", "1", "root"],
             )
 
-    def _copy_files(self):
+    def _files(self):
         """Add files to vdi"""
 
         files = self._install_cfg.get("files", [])
         for f in files:
             src = f["src"]
             dest = f["dest"]
-            mode = f["mode"]
-            owner = f["owner"]
-            group = f["group"]
+            ftype = f["type"]
+            mode = f.get("mode")
+            owner = f.get("owner")
+            group = f.get("group")
 
-            host_dest = dest
-            if os.path.abspath(host_dest):
-                host_dest = os.path.relpath(host_dest, "/")
-            host_dest = os.path.join(self._storage.root, host_dest)
+            if ftype != "link":
+                if mode is None:
+                    raise ValueError(
+                        f"'mode' must be a provided key if type is not link!: {f}",
+                    )
+                if owner is None:
+                    raise ValueError(
+                        f"'owner' must be a provided key if type is not link!: {f}",
+                    )
+                if group is None:
+                    raise ValueError(
+                        f"'owner' must be a provided key if type is not link!: {f}",
+                    )
 
-            copy(src=src, dst=host_dest)
-
-            os.chmod(host_dest, mode=int(mode, base=8))
-
-            vdi_owner_id = int(
-                ArchChroot.chroot(
-                    chroot_dir=self._storage.root,
-                    chroot_command="getent",
-                    chroot_command_args=["passwd", owner],
-                ).split(":")[2]
-            )
-
-            vdi_group_id = int(
-                ArchChroot.chroot(
-                    chroot_dir=self._storage.root,
-                    chroot_command="getent",
-                    chroot_command_args=["group", group],
-                ).split(":")[2]
-            )
-
-            chown(path=host_dest, user=vdi_owner_id, group=vdi_group_id)
+            if ftype == "link":
+                self._create_symlink(self._storage.root, src=src, dest=dest)
+            if ftype == "directory":
+                self._copy_directory(
+                    self._storage.root,
+                    src=src,
+                    dest=dest,
+                    mode=mode,
+                    owner=owner,
+                    group=group,
+                )
+            if ftype == "file":
+                self._copy_file(
+                    self._storage.root,
+                    src=src,
+                    dest=dest,
+                    mode=mode,
+                    owner=owner,
+                    group=group,
+                )
 
     def _grub(self):
         """Install grub"""
@@ -338,6 +427,6 @@ class VDI:
         self._locale()
         self._timezone()
         self._users()
-        self._copy_files()
+        self._files()
         self._initramfs()
         self._grub()
