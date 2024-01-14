@@ -104,8 +104,11 @@ The required keys are ['base', and 'package_manager']
     File objects will usually be copied from the host to the new system. File
     items must contain the following keys: ['src', 'dest', 'type'] and may
     contain the additional keys: ['owner', 'group', 'mode'].
-      - src (str): The source filepath.
-      - dest (str): The destination filepath.
+      - src (str): The source filepath. This should be relative to the host,
+        unless the type is "link", then this should be relative to the newly
+        installed system.
+      - dest (str): The destination filepath. This should relative to the
+        newly installed system.
       - type (str): The type of file. This dictates the final action that will
         be performed, for 'file' or 'directory' the src will be copied to the
         destination. For 'link' a symlink will be created in the system at
