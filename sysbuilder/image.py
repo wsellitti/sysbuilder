@@ -208,6 +208,17 @@ class VDI:
             chroot_command_args=["-o", "/boot/grub/grub.cfg"],
         )
 
+        # Install grub in a default place.
+        # TODO: pull efi directory from config
+        efi_arch = os.path.join(
+            self._storage.root, "efi", "EFI", "arch", "grubx64.efi"
+        )
+        efi_generic_dir = os.path.join(self._storage.root, "efi", "EFI", "BOOT")
+        efi_generic = os.path.join(efi_generic_dir, "BOOTX64.efi")
+
+        os.makedirs(efi_generic_dir)
+        copy(efi_arch, efi_generic)
+
     def _initramfs(self):
         """
         Recreate initramfs. Run at the end of create automatically incase
