@@ -388,6 +388,8 @@ class Storage:
     A storage object representing a storage device, real or image file.
     """
 
+    # TODO: Translate filepaths in storage root to host root
+
     def __init__(self, storage: dict):
         """
         Storage object.
