@@ -249,7 +249,7 @@ class VDI:
 
         # TODO: Fix encoding
         with open(
-            file=os.path.join(self._storage.root, "etc/locale.conf"),
+            file=os.path.join(self._storage.root, "etc/locale.gen"),
             mode="a",
             encoding="UTF-8",
         ) as f:
