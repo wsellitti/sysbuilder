@@ -352,10 +352,15 @@ class VDI:
                 )
             except CalledProcessError as cpe:
                 if cpe.returncode == 2:
+                    groupadd_args = []
+                    if service_account:
+                        groupadd_args.extend(["--system"])
+                    groupadd_args.append(group)
+
                     ArchChroot.chroot(
                         chroot_dir=self._storage.root,
                         chroot_command="groupadd",
-                        chroot_command_args=[group],
+                        chroot_command_args=groupadd_args,
                     )
                 else:
                     raise cpe
