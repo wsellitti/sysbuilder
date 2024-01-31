@@ -144,6 +144,8 @@ The required keys are ['base', and 'package_manager']
         if it does not already exist. Defaults to true.
       - ssh_keys (list): A list of ssh_keys to add to the users
         `authorized_keys` file.
+  - late_commands (list): A list of simple shell commands, no support for
+    advanced shell features like redirection. These run at the very end.
 
 """
 
@@ -179,6 +181,7 @@ def check(cfg: Dict) -> None:
         properties={
             "base": type_str(enum=["archlinux"]),
             "disable_root": type_bool(),
+            "late_commands": type_list(items=type_str()),
             "locale": type_str(),
             "package_manager": type_str(enum=["pacman"]),
             "packages": type_list(items=type_str()),

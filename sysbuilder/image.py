@@ -258,6 +258,21 @@ class VDI:
 
         ArchChroot.chroot(self._storage.root, chroot_command="locale-gen")
 
+    def _shell_commands(self):
+        """
+        Run a list of simple shell commands, no support for shell redirects.
+        """
+
+        late_commands = self._install_cfg.get("late_commands", [])
+
+        for command in late_commands:
+            cmd = command.split()
+            ArchChroot.chroot(
+                chroot_dir=self._storage.root,
+                chroot_command=cmd[0],
+                chroot_command_args=cmd[1:],
+            )
+
     def _systemd(self):
         """
         Enable/disable services in a systemd-based system.
@@ -446,3 +461,4 @@ class VDI:
         self._files()
         self._initramfs()
         self._grub()
+        self._shell_commands()
