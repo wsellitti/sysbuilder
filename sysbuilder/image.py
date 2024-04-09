@@ -52,10 +52,6 @@ class VDI:
             dest = os.path.relpath(dest, "/")
         dest = os.path.join(root, dest)
 
-        copy(src=src, dst=dest)
-
-        os.chmod(dest, mode=int(mode, base=8))
-
         vdi_owner_id = int(
             ArchChroot.chroot(
                 chroot_dir=root,
@@ -71,6 +67,14 @@ class VDI:
                 chroot_command_args=["group", group],
             ).split(":")[2]
         )
+
+        if not os.path.exists(os.path.dirname(dest)):
+            os.makedirs(os.path.dirname(dest))
+            chown(path=os.path.dirname(dest), user=vdi_owner_id, group=vdi_group_id)
+
+        copy(src=src, dst=dest)
+
+        os.chmod(dest, mode=int(mode, base=8))
 
         chown(path=dest, user=vdi_owner_id, group=vdi_group_id)
 
